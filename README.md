@@ -52,6 +52,12 @@ MAIL_FROM=seu_email@gmail.com
 NODE_ENV=development
 ```
 
+### Scripts úteis (server)
+```bash
+npm run normalizar-emails  # Normaliza emails existentes para minúsculas
+npm run seed               # Popula base com dados demo
+```
+
 ### Cliente (.env)
 
 Opcional. Copie `client/.env.example` para `client/.env` se quiser alterar o URL da API:
@@ -117,12 +123,12 @@ Após executar o seed:
 ## Endpoints principais (API)
 
 ### Autenticação (`/api/auth`)
-- `POST /registar` - Registo (mensagem "Email já registado" mantida)
-- `POST /login` - Login (403 CONTA_BLOQUEADA se bloqueado)
+- `POST /registar` - Registo (emails normalizados trim+lowercase, mensagem "Email já registado" mantida)
+- `POST /login` - Login (emails normalizados trim+lowercase, 403 CONTA_BLOQUEADA se bloqueado)
 - `POST /logout` - Logout
 - `GET /me` - Utilizador atual (403 CONTA_BLOQUEADA se bloqueado)
-- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica; bloqueados não recebem)
-- `POST /recuperacao/verificar` - Verificar código e alterar senha (bloqueados rejeitados)
+- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica; bloqueados não recebem; limite 5/15min por IP+email, mais permissivo em dev)
+- `POST /recuperacao/verificar` - Verificar código (apenas dígitos) e alterar senha (bloqueados rejeitados). Devolve tentativas restantes em caso de código errado. Limite 15/15min em produção, mais permissivo em dev. Em caso de ZodError devolve a primeira mensagem de validação.
 
 ### Bolsas (`/api/bolsas`)
 - `GET /` - Listar (com filtros search, area, status)

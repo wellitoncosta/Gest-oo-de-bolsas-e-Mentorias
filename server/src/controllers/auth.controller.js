@@ -3,18 +3,18 @@ import { z } from 'zod'
 
 const registarSchema = z.object({
   nome: z.string().min(2, 'Nome obrigatório'),
-  email: z.string().email('Email inválido'),
-  senha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
   role: z.enum(['ESTUDANTE', 'MENTOR']).optional()
 })
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z.string().trim().toLowerCase().email('Email inválido'),
   senha: z.string().min(1, 'Senha obrigatória')
 })
 
-const pedirSchema = z.object({ email: z.string().email('Email inválido') })
-const resetSchema = z.object({ email: z.string().email('Email inválido'), codigo: z.string().length(6, 'Código deve ter 6 dígitos'), novaSenha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres') })
+const pedirSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido') })
+const resetSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), codigo: z.string().trim().regex(/^\d{6}$/, 'O código deve ter 6 dígitos'), novaSenha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres') })
 
 const setCookie = (res, token) => {
   res.cookie('token', token, {
