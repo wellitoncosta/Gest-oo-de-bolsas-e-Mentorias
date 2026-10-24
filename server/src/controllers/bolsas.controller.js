@@ -32,9 +32,13 @@ export const listar = async (req, res, next) => {
 
 export const obter = async (req, res, next) => {
   try {
-    const bolsa = await prisma.bolsa.findUnique({ where: { id: req.params.id }, include: { candidaturas: true } })
+    const bolsa = await prisma.bolsa.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { candidaturas: true } } }
+    })
     if (!bolsa) return res.status(404).json({ mensagem: 'Bolsa não encontrada' })
-    res.json(bolsa)
+    const { _count, ...rest } = bolsa
+    res.json({ ...rest, totalCandidaturas: _count.candidaturas })
   } catch (err) { next(err) }
 }
 

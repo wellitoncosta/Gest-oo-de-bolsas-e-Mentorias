@@ -11,8 +11,9 @@ export const candidatar = async (req, res, next) => {
     const bolsa = await prisma.bolsa.findUnique({ where: { id: bolsaId } })
     if (!bolsa) return res.status(404).json({ mensagem: 'Bolsa não encontrada' })
     if (bolsa.status === 'FECHADA') return res.status(400).json({ mensagem: 'Bolsa fechada para candidaturas' })
+    if (new Date(bolsa.dataLimite) < new Date()) return res.status(400).json({ mensagem: 'Prazo para candidaturas terminado' })
     const existe = await prisma.candidatura.findUnique({ where: { userId_bolsaId: { userId: req.user.id, bolsaId } } })
-    if (existe) return res.status(400).json({ mensagem: 'Já te candidaturas a esta bolsa' })
+    if (existe) return res.status(400).json({ mensagem: 'Já te candidataste a esta bolsa' })
     const cand = await prisma.candidatura.create({ data: { userId: req.user.id, bolsaId, mensagem } })
     res.status(201).json(cand)
   } catch (err) { next(err) }

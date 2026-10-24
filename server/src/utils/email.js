@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer'
-import dotenv from 'dotenv'
-dotenv.config()
+import 'dotenv/config'
 
 export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM, NODE_ENV } = process.env

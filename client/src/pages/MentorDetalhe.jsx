@@ -51,8 +51,6 @@ export default function MentorDetalhe() {
   if (loading) return <div className="p-8 text-center">A carregar...</div>
   if (!mentor) return <div className="p-8 text-center">Mentor não encontrado</div>
 
-  const livres = disps.filter(d => !d.mentorias?.some(m => m.status === 'PENDENTE' || m.status === 'CONFIRMADA'))
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="bg-white p-6 rounded shadow mb-6">
@@ -64,9 +62,9 @@ export default function MentorDetalhe() {
         <h2 className="font-bold text-lg mb-4">Disponibilidades</h2>
         {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
         {sucesso && <div className="mb-3 p-3 bg-green-100 text-green-700 rounded">{sucesso}</div>}
-        {livres.length === 0 ? <p className="text-gray-500">Sem horários disponíveis</p> : (
+        {disps.length === 0 ? <p className="text-gray-500">Sem horários disponíveis</p> : (
           <div className="space-y-3">
-            {livres.map(d => (
+            {disps.map(d => (
               <label key={d.id} className="flex items-center gap-3 border p-3 rounded cursor-pointer">
                 <input type="radio" name="disp" value={d.id} onChange={(e) => setSel(e.target.value)} />
                 <div><div className="font-medium">{new Date(d.data).toLocaleDateString('pt-PT')} • {d.horaInicio} - {d.horaFim}</div></div>
@@ -74,13 +72,13 @@ export default function MentorDetalhe() {
             ))}
           </div>
         )}
-        {user?.role === 'ESTUDANTE' && livres.length > 0 && (
+        {user?.role === 'ESTUDANTE' && disps.length > 0 && (
           <div className="mt-4 space-y-3">
             <input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Tema da mentoria" className="w-full border rounded px-3 py-2" />
             <button onClick={agendar} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Pedir agendamento</button>
           </div>
         )}
-        {!user && livres.length > 0 && <p className="text-gray-500 mt-3">Inicie sessão como estudante para agendar.</p>}
+        {!user && disps.length > 0 && <p className="text-gray-500 mt-3">Inicie sessão como estudante para agendar.</p>}
       </div>
     </div>
   )

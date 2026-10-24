@@ -1,6 +1,6 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import authRoutes from './routes/auth.routes.js'
 import bolsasRoutes from './routes/bolsas.routes.js'
@@ -10,8 +10,6 @@ import contaRoutes from './routes/conta.routes.js'
 import utilizadoresRoutes from './routes/utilizadores.routes.js'
 import dashboardRoutes from './routes/dashboard.routes.js'
 import { erroHandler } from './middlewares/erro.js'
-
-dotenv.config()
 
 const app = express()
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }))

@@ -15,6 +15,10 @@ const senhaSchema = z.object({
   nova: z.string().min(6)
 })
 
+const apagarSchema = z.object({
+  senha: z.string().min(1, 'Senha atual obrigatória')
+})
+
 export const verPerfil = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, nome: true, email: true, role: true, telefone: true, area: true, biografia: true, instituicao: true, createdAt: true } })
@@ -44,6 +48,14 @@ export const alterarSenha = async (req, res, next) => {
 
 export const apagarConta = async (req, res, next) => {
   try {
+    const { senha } = apagarSchema.parse(req.body)
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } })
+    const ok = await bcrypt.compare(senha, user.senha)
+    if (!ok) return res.status(400).json({ mensagem: 'Senha atual incorreta' })
+    if (user.role === 'ADMIN') {
+      const admins = await prisma.user.count({ where: { role: 'ADMIN' } })
+      if (admins <= 1) return res.status(400).json({ mensagem: 'Não é possível apagar a conta do último administrador' })
+    }
     await prisma.user.delete({ where: { id: req.user.id } })
     res.clearCookie('token')
     res.json({ mensagem: 'Conta apagada' })

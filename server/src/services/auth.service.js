@@ -36,7 +36,7 @@ export const pedirRecuperacao = async (email) => {
   }
   // Invalidar códigos anteriores
   await prisma.passwordReset.updateMany({ where: { userId: user.id, used: false }, data: { used: true } })
-  const codigo = String(Math.floor(100000 + Math.random() * 900000))
+  const codigo = String(crypto.randomInt(100000, 1000000))
   const codeHash = await bcrypt.hash(codigo, 10)
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
   await prisma.passwordReset.create({ data: { userId: user.id, codeHash, expiresAt } })

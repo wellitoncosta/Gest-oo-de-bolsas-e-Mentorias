@@ -46,9 +46,11 @@ export default function MinhaConta() {
   }
 
   const apagar = async () => {
+    const senha = prompt('Para apagar a conta, introduza a sua senha atual:')
+    if (!senha) return
     if (!confirm('Tem a certeza que deseja apagar a sua conta? Esta ação não pode ser revertida.')) return
     try {
-      await api.delete('/conta')
+      await api.delete('/conta', { data: { senha } })
       await logout()
       navigate('/')
     } catch (err) {

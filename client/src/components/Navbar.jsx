@@ -24,8 +24,8 @@ export default function Navbar() {
               <Link to="/dashboard" className="hover:text-blue-600">Dashboard</Link>
               <Link to="/bolsas" className="hover:text-blue-600">Bolsas</Link>
               <Link to="/mentores" className="hover:text-blue-600">Mentores</Link>
-              <Link to="/mentorias" className="hover:text-blue-600">Mentorias</Link>
-              <Link to="/minha-conta" className="hover:text-blue-600">Minha Conta</Link>
+              {user && user.role !== 'ADMIN' && <Link to="/mentorias" className="hover:text-blue-600">Mentorias</Link>}
+              {user && <Link to="/minha-conta" className="hover:text-blue-600">Minha Conta</Link>}
               {user?.role === 'ADMIN' && <Link to="/admin" className="hover:text-blue-600">Admin</Link>}
             </div>
           </div>
@@ -52,8 +52,8 @@ export default function Navbar() {
             <Link to="/dashboard" onClick={() => setAberto(false)}>Dashboard</Link>
             <Link to="/bolsas" onClick={() => setAberto(false)}>Bolsas</Link>
             <Link to="/mentores" onClick={() => setAberto(false)}>Mentores</Link>
-            <Link to="/mentorias" onClick={() => setAberto(false)}>Mentorias</Link>
-            <Link to="/minha-conta" onClick={() => setAberto(false)}>Minha Conta</Link>
+            {user && user.role !== 'ADMIN' && <Link to="/mentorias" onClick={() => setAberto(false)}>Mentorias</Link>}
+            {user && <Link to="/minha-conta" onClick={() => setAberto(false)}>Minha Conta</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin" onClick={() => setAberto(false)}>Admin</Link>}
             {!user ? (
               <>

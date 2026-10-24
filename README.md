@@ -52,6 +52,14 @@ MAIL_FROM=seu_email@gmail.com
 NODE_ENV=development
 ```
 
+### Cliente (.env)
+
+Opcional. Copie `client/.env.example` para `client/.env` se quiser alterar o URL da API:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
 ### Configurar Gmail (Senha de App)
 
 Para enviar emails reais de recuperação de senha:
@@ -109,43 +117,44 @@ Após executar o seed:
 ## Endpoints principais (API)
 
 ### Autenticação (`/api/auth`)
-- `POST /registar` - Registo
+- `POST /registar` - Registo (mensagem "Email já registado" mantida)
 - `POST /login` - Login
 - `POST /logout` - Logout
 - `GET /me` - Utilizador atual
-- `POST /recuperacao/pedir` - Pedir código de recuperação
+- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica)
 - `POST /recuperacao/verificar` - Verificar código e alterar senha
 
 ### Bolsas (`/api/bolsas`)
 - `GET /` - Listar (com filtros search, area, status)
-- `GET /:id` - Detalhe
+- `GET /:id` - Detalhe (sem candidaturas, inclui totalCandidaturas). Rejeita candidatura se prazo vencido
 - `POST /` - Criar (Admin)
 - `PUT /:id` - Editar (Admin)
 - `DELETE /:id` - Remover (Admin)
 
 ### Candidaturas (`/api/candidaturas`)
-- `POST /bolsa/:bolsaId` - Candidatar (Estudante)
+- `POST /bolsa/:bolsaId` - Candidatar (Estudante). Rejeita se prazo vencido ou bolsa fechada
 - `GET /minhas` - Minhas candidaturas (Estudante)
 - `GET /` - Todas (Admin)
 - `PUT /:id/estado` - Alterar estado (Admin)
 - `DELETE /:id` - Cancelar (Estudante)
 
 ### Mentorias (`/api/mentorias`)
-- `GET /mentores` - Listar mentores
-- `GET /mentores/:id` - Detalhe mentor
-- `GET /disponibilidades` - Listar disponibilidades
-- `POST /disponibilidades` - Criar disponibilidade (Mentor)
-- `DELETE /disponibilidades/:id` - Remover disponibilidade (Mentor)
-- `POST /agendar` - Agendar (Estudante)
+- `GET /mentores` - Listar mentores (sem email/telefone)
+- `GET /mentores/:id` - Detalhe mentor (sem email/telefone)
+- `GET /disponibilidades` - Listar apenas horários LIVRES e FUTUROS (sem dados de estudantes)
+- `GET /minhas-disponibilidades` - Meus horários (apenas MENTOR, com dados do estudante se ocupado)
+- `POST /disponibilidades` - Criar disponibilidade (Mentor). Valida formato, não passado, horaFim>horaInicio, sem sobreposição
+- `DELETE /disponibilidades/:id` - Remover disponibilidade (Mentor). Impedido se PENDENTE/CONFIRMADA
+- `POST /agendar` - Agendar (Estudante). Transação com verificação, valida futuro, responde 409 se ocupado
 - `GET /minhas` - Minhas mentorias
-- `PUT /:id/estado` - Alterar estado
+- `PUT /:id/estado` - Alterar estado com matriz de permissões rigorosa (403/400 consoante caso)
 - `GET /` - Todas (Admin)
 
 ### Conta (`/api/conta`)
 - `GET /` - Ver perfil
 - `PUT /` - Editar perfil
 - `PUT /senha` - Alterar senha
-- `DELETE /` - Apagar conta
+- `DELETE /` - Apagar conta (exige senha atual no body; impede apagar último admin)
 
 ### Dashboard (`/api/dashboard`)
 - `GET /estatisticas` - Estatísticas públicas
@@ -153,7 +162,13 @@ Após executar o seed:
 
 ### Utilizadores (`/api/utilizadores`)
 - `GET /` - Listar (Admin)
-- `DELETE /:id` - Remover (Admin)
+- `DELETE /:id` - Remover (Admin). Impede apagar própria conta ou último admin
+
+## Regras de permissões
+- **Mentor**: gere disponibilidades e só pode alterar estado das suas mentorias conforme matriz (PENDENTE→CONFIRMADA/RECUSADA/CANCELADA, CONFIRMADA→CONCLUIDA/CANCELADA)
+- **Estudante**: só pode cancelar as suas mentorias (PENDENTE/CONFIRMADA). Não pode confirmar/concluir
+- **Admin**: transições válidas conforme regras, pode gerir tudo. Não pode apagar própria conta nem último admin
+- **Navbar**: Visitantes veem Início, Dashboard, Bolsas, Mentores, Entrar, Registar. Com sessão: adiciona Minha Conta; Mentorias apenas para não-Admin; Admin apenas para ADMIN.
 
 ## Tecnologias
 

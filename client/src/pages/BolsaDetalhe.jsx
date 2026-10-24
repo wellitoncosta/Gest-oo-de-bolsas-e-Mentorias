@@ -44,12 +44,15 @@ export default function BolsaDetalhe() {
   if (loading) return <div className="p-8 text-center">A carregar...</div>
   if (!bolsa) return <div className="p-8 text-center">Bolsa não encontrada</div>
 
+  const prazoPassado = bolsa.dataLimite ? new Date(bolsa.dataLimite) < new Date() : false
+  const podeCandidatar = bolsa.status === 'ABERTA' && !prazoPassado
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="bg-white p-6 rounded shadow">
         <div className="flex justify-between mb-4">
           <h1 className="text-2xl font-bold">{bolsa.titulo}</h1>
-          <span className={`text-xs px-2 py-1 rounded h-fit ${bolsa.status === 'ABERTA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{bolsa.status}</span>
+          <span className={`text-xs px-2 py-1 rounded h-fit ${bolsa.status === 'ABERTA' && !prazoPassado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{prazoPassado ? 'PRAZO TERMINADO' : bolsa.status}</span>
         </div>
         <p className="text-gray-600 mb-4">{bolsa.entidade} • {bolsa.area}</p>
         <div className="space-y-4 mb-6">
@@ -58,7 +61,7 @@ export default function BolsaDetalhe() {
           {bolsa.valor && <div><h2 className="font-semibold">Valor</h2><p className="text-gray-700">{bolsa.valor}</p></div>}
           <div><h2 className="font-semibold">Data limite</h2><p className="text-gray-700">{new Date(bolsa.dataLimite).toLocaleDateString('pt-PT')}</p></div>
         </div>
-        {bolsa.status === 'ABERTA' && (
+        {podeCandidatar && (
           <div className="border-t pt-4">
             <h2 className="font-semibold mb-2">Candidatar-me</h2>
             {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
@@ -75,6 +78,7 @@ export default function BolsaDetalhe() {
             )}
           </div>
         )}
+        {prazoPassado && <p className="text-red-600 mt-4">Prazo para candidaturas terminado.</p>}
       </div>
     </div>
   )
