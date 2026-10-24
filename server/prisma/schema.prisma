@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  nome        String
+  email       String   @unique
+  senha       String
+  role        String   @default("ESTUDANTE")
+  telefone    String?
+  area        String?
+  biografia   String?
+  instituicao String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mentorDisponibilidades DisponibilidadeMentor[]
+  candidaturas           Candidatura[]
+  mentoriasComoMentor    Mentoria[]                @relation("MentorMentorias")
+  mentoriasComoEstudante Mentoria[]                @relation("EstudanteMentorias")
+  passwordResets         PasswordReset[]
+}
+
+model Bolsa {
+  id         String   @id @default(uuid())
+  titulo     String
+  descricao  String
+  entidade   String
+  valor      String?
+  requisitos String?
+  area       String
+  dataLimite DateTime
+  status     String   @default("ABERTA")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  candidaturas Candidatura[]
+}
+
+model Candidatura {
+  id        String   @id @default(uuid())
+  userId    String
+  bolsaId   String
+  mensagem  String?
+  status    String   @default("PENDENTE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bolsa Bolsa @relation(fields: [bolsaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bolsaId])
+}
+
+model DisponibilidadeMentor {
+  id         String   @id @default(uuid())
+  mentorId   String
+  data       DateTime
+  horaInicio String
+  horaFim    String
+  createdAt  DateTime @default(now())
+
+  mentor     User       @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  mentorias  Mentoria[]
+}
+
+model Mentoria {
+  id                String   @id @default(uuid())
+  mentorId          String
+  estudanteId       String
+  disponibilidadeId String
+  tema              String
+  status            String   @default("PENDENTE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  mentor          User                  @relation("MentorMentorias", fields: [mentorId], references: [id], onDelete: Cascade)
+  estudante       User                  @relation("EstudanteMentorias", fields: [estudanteId], references: [id], onDelete: Cascade)
+  disponibilidade DisponibilidadeMentor @relation(fields: [disponibilidadeId], references: [id], onDelete: Cascade)
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
