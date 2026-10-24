@@ -12,8 +12,12 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await api.get('/auth/me')
         setUser(res.data.user)
-      } catch {
-        setUser(null)
+      } catch (err) {
+        if (err.response?.data?.codigo === 'CONTA_BLOQUEADA') {
+          setUser(null)
+        } else {
+          setUser(null)
+        }
       } finally {
         setLoading(false)
       }
@@ -22,9 +26,16 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const login = async (email, senha) => {
-    const res = await api.post('/auth/login', { email, senha })
-    setUser(res.data.user)
-    return res.data
+    try {
+      const res = await api.post('/auth/login', { email, senha })
+      setUser(res.data.user)
+      return res.data
+    } catch (err) {
+      if (err.response?.data?.codigo === 'CONTA_BLOQUEADA') {
+        throw err
+      }
+      throw err
+    }
   }
 
   const registar = async (dados) => {
@@ -34,7 +45,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   const logout = async () => {
-    await api.post('/auth/logout')
+    try {
+      await api.post('/auth/logout')
+    } catch {}
     setUser(null)
   }
 

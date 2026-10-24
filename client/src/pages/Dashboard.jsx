@@ -74,7 +74,10 @@ export default function Dashboard() {
           <h2 className="font-bold mb-4">Minha área</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold mb-2">As minhas candidaturas</h3>
+              <div className="flex justify-between mb-2">
+                <h3 className="font-semibold">As minhas candidaturas</h3>
+                {user.role === 'ESTUDANTE' && <a href="/candidaturas" className="text-blue-600 text-sm">Ver todas</a>}
+              </div>
               {minha.candidaturas.length === 0 ? <p className="text-gray-500">Sem candidaturas</p> : (
                 <ul className="space-y-2">
                   {minha.candidaturas.slice(0,5).map(c => <li key={c.id} className="border p-2 rounded"><div className="font-medium">{c.bolsa.titulo}</div><div className="text-sm text-gray-500">{c.status}</div></li>)}

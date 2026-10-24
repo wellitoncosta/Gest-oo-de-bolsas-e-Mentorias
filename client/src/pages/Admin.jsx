@@ -70,24 +70,37 @@ function BolsasAdmin() {
 
 function UtilizadoresAdmin() {
   const [users, setUsers] = useState([])
+  const [erro, setErro] = useState('')
   const carregar = async () => {
     const res = await api.get('/utilizadores')
     setUsers(res.data)
   }
   useEffect(() => { carregar() }, [])
-  const remover = async (id) => {
-    if (!confirm('Remover utilizador?')) return
-    await api.delete(`/utilizadores/${id}`)
-    carregar()
+  const alterar = async (u) => {
+    setErro('')
+    if (u.role === 'ADMIN') return
+    if (!confirm(u.bloqueado ? 'Desbloquear utilizador?' : 'Bloquear utilizador?')) return
+    try {
+      const res = await api.put(`/utilizadores/${u.id}/bloqueio`, { bloqueado: !u.bloqueado })
+      setUsers(users.map(x => x.id === u.id ? res.data : x))
+    } catch (err) {
+      setErro(err.response?.data?.mensagem || 'Erro')
+    }
   }
   return (
     <div>
       <h2 className="font-bold text-xl mb-4">Utilizadores</h2>
+      {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
       <div className="space-y-2">
         {users.map(u => (
           <div key={u.id} className="bg-white p-3 rounded shadow flex justify-between items-center">
-            <div><div className="font-medium">{u.nome}</div><div className="text-sm text-gray-500">{u.email} • {u.role}</div></div>
-            <button onClick={() => remover(u.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Remover</button>
+            <div>
+              <div className="font-medium">{u.nome}</div>
+              <div className="text-sm text-gray-500">{u.email} • {u.role} • <span className={u.bloqueado ? 'text-red-600' : 'text-green-600'}>{u.bloqueado ? 'Bloqueado' : 'Ativo'}</span></div>
+            </div>
+            {u.role !== 'ADMIN' ? (
+              <button onClick={() => alterar(u)} className={`px-3 py-1 rounded text-sm ${u.bloqueado ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>{u.bloqueado ? 'Desbloquear' : 'Bloquear'}</button>
+            ) : null}
           </div>
         ))}
       </div>
@@ -97,29 +110,70 @@ function UtilizadoresAdmin() {
 
 function CandidaturasAdmin() {
   const [cands, setCands] = useState([])
+  const [filtro, setFiltro] = useState('TODAS')
+  const [pesquisa, setPesquisa] = useState('')
+  const [msg, setMsg] = useState('')
+  const [erro, setErro] = useState('')
   const carregar = async () => {
     const res = await api.get('/candidaturas')
     setCands(res.data)
   }
   useEffect(() => { carregar() }, [])
   const atualizar = async (id, status) => {
-    await api.put(`/candidaturas/${id}/estado`, { status })
-    carregar()
+    setErro(''); setMsg('')
+    try {
+      await api.put(`/candidaturas/${id}/estado`, { status })
+      setMsg(status === 'APROVADA' ? 'Candidatura aprovada' : status === 'REJEITADA' ? 'Candidatura rejeitada' : 'Candidatura revertida para pendente')
+      carregar()
+    } catch (err) {
+      setErro(err.response?.data?.mensagem || 'Erro ao atualizar candidatura')
+    }
   }
+  const cor = (s) => s === 'APROVADA' ? 'bg-green-100 text-green-700' : s === 'REJEITADA' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+  const filtradas = cands.filter(c => {
+    if (filtro !== 'TODAS' && c.status !== filtro) return false
+    if (pesquisa) {
+      const p = pesquisa.toLowerCase()
+      if (!(c.bolsa?.titulo?.toLowerCase().includes(p) || c.user?.nome?.toLowerCase().includes(p))) return false
+    }
+    return true
+  })
   return (
     <div>
       <h2 className="font-bold text-xl mb-4">Candidaturas</h2>
+      {msg && <div className="mb-3 p-3 bg-green-100 text-green-700 rounded">{msg}</div>}
+      {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
+      <div className="flex gap-3 mb-4 flex-wrap">
+        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="border rounded px-3 py-2">
+          <option value="TODAS">Todas</option>
+          <option value="PENDENTE">Pendentes</option>
+          <option value="APROVADA">Aprovadas</option>
+          <option value="REJEITADA">Rejeitadas</option>
+        </select>
+        <input value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} placeholder="Pesquisar por bolsa ou candidato" className="border rounded px-3 py-2" />
+      </div>
       <div className="space-y-2">
-        {cands.map(c => (
+        {filtradas.map(c => (
           <div key={c.id} className="bg-white p-3 rounded shadow">
             <div className="flex justify-between mb-2">
-              <div><div className="font-medium">{c.user.nome} - {c.bolsa.titulo}</div><div className="text-sm text-gray-500">{c.status}</div></div>
+              <div>
+                <div className="font-medium">{c.user?.nome} ({c.user?.email}) - {c.bolsa?.titulo}</div>
+                <div className="text-sm text-gray-500">{c.createdAt ? new Date(c.createdAt).toLocaleString('pt-PT') : ''}</div>
+                <span className={`text-xs px-2 py-1 rounded ${cor(c.status)}`}>{c.status}</span>
+              </div>
               <div className="flex gap-2">
-                <button onClick={() => atualizar(c.id, 'APROVADA')} className="px-3 py-1 bg-green-600 text-white rounded text-sm">Aprovar</button>
-                <button onClick={() => atualizar(c.id, 'REJEITADA')} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Rejeitar</button>
+                {c.status === 'PENDENTE' && (
+                  <>
+                    <button onClick={() => atualizar(c.id, 'APROVADA')} className="px-3 py-1 bg-green-600 text-white rounded text-sm">Aprovar</button>
+                    <button onClick={() => atualizar(c.id, 'REJEITADA')} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Rejeitar</button>
+                  </>
+                )}
+                {c.status !== 'PENDENTE' && (
+                  <button onClick={() => atualizar(c.id, 'PENDENTE')} className="px-3 py-1 bg-yellow-600 text-white rounded text-sm">Reverter para pendente</button>
+                )}
               </div>
             </div>
-            {c.mensagem && <p className="text-sm text-gray-600">{c.mensagem}</p>}
+            {c.mensagem && <p className="text-sm text-gray-600 whitespace-pre-wrap">{c.mensagem}</p>}
           </div>
         ))}
       </div>

@@ -25,6 +25,7 @@ export default function Navbar() {
               <Link to="/bolsas" className="hover:text-blue-600">Bolsas</Link>
               <Link to="/mentores" className="hover:text-blue-600">Mentores</Link>
               {user && user.role !== 'ADMIN' && <Link to="/mentorias" className="hover:text-blue-600">Mentorias</Link>}
+              {user && user.role === 'ESTUDANTE' && <Link to="/candidaturas" className="hover:text-blue-600">Candidaturas</Link>}
               {user && <Link to="/minha-conta" className="hover:text-blue-600">Minha Conta</Link>}
               {user?.role === 'ADMIN' && <Link to="/admin" className="hover:text-blue-600">Admin</Link>}
             </div>
@@ -53,6 +54,7 @@ export default function Navbar() {
             <Link to="/bolsas" onClick={() => setAberto(false)}>Bolsas</Link>
             <Link to="/mentores" onClick={() => setAberto(false)}>Mentores</Link>
             {user && user.role !== 'ADMIN' && <Link to="/mentorias" onClick={() => setAberto(false)}>Mentorias</Link>}
+            {user && user.role === 'ESTUDANTE' && <Link to="/candidaturas" onClick={() => setAberto(false)}>Candidaturas</Link>}
             {user && <Link to="/minha-conta" onClick={() => setAberto(false)}>Minha Conta</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin" onClick={() => setAberto(false)}>Admin</Link>}
             {!user ? (

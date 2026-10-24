@@ -1,7 +1,10 @@
 export const erroHandler = (err, req, res, next) => {
-  console.error(err)
   if (err.name === 'ZodError') {
     return res.status(400).json({ mensagem: 'Dados inválidos', erros: err.errors })
   }
-  res.status(err.status || 500).json({ mensagem: err.message || 'Erro interno do servidor' })
+  if (err.status) {
+    return res.status(err.status).json({ mensagem: err.message || 'Erro', codigo: err.codigo })
+  }
+  console.error(err)
+  res.status(500).json({ mensagem: 'Erro interno do servidor' })
 }

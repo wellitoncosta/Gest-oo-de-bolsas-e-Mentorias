@@ -57,6 +57,10 @@ export const criarDisponibilidade = async (req, res, next) => {
   try {
     const dados = dispSchema.parse(req.body)
     const dataDisp = new Date(dados.data)
+    const [hI, mI] = dados.horaInicio.split(':').map(Number)
+    const inicio = new Date(dataDisp)
+    inicio.setHours(hI, mI, 0, 0)
+    if (inicio < new Date()) return res.status(400).json({ mensagem: 'Horário já passou' })
     // Verificar sobreposição
     const existentes = await prisma.disponibilidadeMentor.findMany({ where: { mentorId: req.user.id } })
     const sobrepoe = existentes.some(d => {
@@ -79,21 +83,20 @@ export const listarDisponibilidades = async (req, res, next) => {
     if (mentorId) where.mentorId = mentorId
     const disps = await prisma.disponibilidadeMentor.findMany({
       where,
-      include: { mentor: { select: { id: true, nome: true, area: true } }, mentorias: true },
+      include: { mentor: { select: { id: true, nome: true, area: true, bloqueado: true } }, mentorias: true },
       orderBy: { data: 'asc' }
     })
     const agora = new Date()
     const resultado = []
     for (const d of disps) {
+      if (d.mentor?.bloqueado) continue
       const ocupado = d.mentorias.some(m => m.status === 'PENDENTE' || m.status === 'CONFIRMADA')
       const dataDisp = new Date(d.data)
-      // considerar passado se data for anterior ou mesma data mas já passou? simples: se data < hoje
-      const hoje = new Date()
-      hoje.setHours(0,0,0,0)
-      const d0 = new Date(dataDisp)
-      d0.setHours(0,0,0,0)
-      if (ocupado || d0 < hoje) continue
-      resultado.push({ id: d.id, mentorId: d.mentorId, data: d.data, horaInicio: d.horaInicio, horaFim: d.horaFim, mentor: d.mentor })
+      const [hI, mI] = d.horaInicio.split(':').map(Number)
+      const inicio = new Date(dataDisp)
+      inicio.setHours(hI, mI, 0, 0)
+      if (ocupado || inicio < agora) continue
+      resultado.push({ id: d.id, mentorId: d.mentorId, data: d.data, horaInicio: d.horaInicio, horaFim: d.horaFim, mentor: { id: d.mentor.id, nome: d.mentor.nome, area: d.mentor.area } })
     }
     res.json(resultado)
   } catch (err) { next(err) }
@@ -124,7 +127,7 @@ export const minhasDisponibilidades = async (req, res, next) => {
 export const listarMentores = async (req, res, next) => {
   try {
     const mentores = await prisma.user.findMany({
-      where: { role: 'MENTOR' },
+      where: { role: 'MENTOR', bloqueado: false },
       select: { id: true, nome: true, area: true, biografia: true }
     })
     res.json(mentores)
@@ -135,10 +138,10 @@ export const obterMentor = async (req, res, next) => {
   try {
     const mentor = await prisma.user.findUnique({
       where: { id: req.params.id },
-      select: { id: true, nome: true, area: true, biografia: true, role: true }
+      select: { id: true, nome: true, area: true, biografia: true, role: true, bloqueado: true }
     })
-    if (!mentor || mentor.role !== 'MENTOR') return res.status(404).json({ mensagem: 'Mentor não encontrado' })
-    res.json(mentor)
+    if (!mentor || mentor.role !== 'MENTOR' || mentor.bloqueado) return res.status(404).json({ mensagem: 'Mentor não encontrado' })
+    res.json({ id: mentor.id, nome: mentor.nome, area: mentor.area, biografia: mentor.biografia })
   } catch (err) { next(err) }
 }
 
@@ -146,19 +149,24 @@ export const agendar = async (req, res, next) => {
   try {
     const { disponibilidadeId, tema } = agendarSchema.parse(req.body)
     const resultado = await prisma.$transaction(async (tx) => {
-      const disp = await tx.disponibilidadeMentor.findUnique({ where: { id: disponibilidadeId }, include: { mentorias: true } })
+      const disp = await tx.disponibilidadeMentor.findUnique({ where: { id: disponibilidadeId }, include: { mentorias: true, mentor: true } })
       if (!disp) throw { status: 404, message: 'Disponibilidade não encontrada' }
-      const hoje = new Date()
-      hoje.setHours(0,0,0,0)
-      const d0 = new Date(disp.data)
-      d0.setHours(0,0,0,0)
-      if (d0 < hoje) throw { status: 400, message: 'Horário já passou' }
+      if (disp.mentor?.bloqueado) throw { status: 403, message: 'Não é possível agendar com este mentor' }
+      const agora = new Date()
+      const inicio = new Date(disp.data)
+      const [h,mn] = disp.horaInicio.split(':').map(Number)
+      inicio.setHours(h, mn, 0, 0)
+      if (inicio < agora) throw { status: 400, message: 'Horário já passou' }
       const ocupado = disp.mentorias.some(m => m.status === 'PENDENTE' || m.status === 'CONFIRMADA')
       if (ocupado) throw { status: 409, message: 'Horário já agendado' }
-      const mentoria = await tx.mentoria.create({
-        data: { mentorId: disp.mentorId, estudanteId: req.user.id, disponibilidadeId, tema }
-      })
-      return mentoria
+      try {
+        const mentoria = await tx.mentoria.create({
+          data: { mentorId: disp.mentorId, estudanteId: req.user.id, disponibilidadeId, tema }
+        })
+        return mentoria
+      } catch (e) {
+        throw { status: 409, message: 'Horário já agendado' }
+      }
     })
     res.status(201).json(resultado)
   } catch (err) { next(err) }

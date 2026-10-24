@@ -18,7 +18,11 @@ export default function Login() {
       await login(email, senha)
       navigate(location.state?.from?.pathname || '/dashboard')
     } catch (err) {
-      setErro(err.response?.data?.mensagem || 'Erro ao iniciar sessão')
+      if (err.response?.data?.codigo === 'CONTA_BLOQUEADA') {
+        setErro(err.response?.data?.mensagem)
+      } else {
+        setErro(err.response?.data?.mensagem || 'Erro ao iniciar sessão')
+      }
     }
   }
 

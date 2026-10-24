@@ -13,6 +13,7 @@ model User {
   email       String   @unique
   senha       String
   role        String   @default("ESTUDANTE")
+  bloqueado   Boolean  @default(false)
   telefone    String?
   area        String?
   biografia   String?

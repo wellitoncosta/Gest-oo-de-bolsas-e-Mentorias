@@ -3,24 +3,25 @@ import prisma from '../config/db.js'
 export const listar = async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, nome: true, email: true, role: true, createdAt: true },
+      select: { id: true, nome: true, email: true, role: true, bloqueado: true, createdAt: true },
       orderBy: { createdAt: 'desc' }
     })
     res.json(users)
   } catch (err) { next(err) }
 }
 
-export const remover = async (req, res, next) => {
+export const alterarBloqueio = async (req, res, next) => {
   try {
+    const { bloqueado } = req.body
     if (req.params.id === req.user.id) {
-      return res.status(400).json({ mensagem: 'Não pode apagar a própria conta' })
+      return res.status(400).json({ mensagem: 'Não pode bloquear a própria conta' })
     }
-    const admins = await prisma.user.count({ where: { role: 'ADMIN' } })
     const alvo = await prisma.user.findUnique({ where: { id: req.params.id } })
-    if (alvo?.role === 'ADMIN' && admins <= 1) {
-      return res.status(400).json({ mensagem: 'Não é possível remover o último administrador' })
+    if (!alvo) return res.status(404).json({ mensagem: 'Utilizador não encontrado' })
+    if (alvo.role === 'ADMIN') {
+      return res.status(403).json({ mensagem: 'Não é possível bloquear outro administrador' })
     }
-    await prisma.user.delete({ where: { id: req.params.id } })
-    res.json({ mensagem: 'Utilizador removido' })
+    const user = await prisma.user.update({ where: { id: req.params.id }, data: { bloqueado: !!bloqueado }, select: { id: true, nome: true, email: true, role: true, bloqueado: true } })
+    res.json(user)
   } catch (err) { next(err) }
 }

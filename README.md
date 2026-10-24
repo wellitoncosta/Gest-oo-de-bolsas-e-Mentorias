@@ -118,11 +118,11 @@ Após executar o seed:
 
 ### Autenticação (`/api/auth`)
 - `POST /registar` - Registo (mensagem "Email já registado" mantida)
-- `POST /login` - Login
+- `POST /login` - Login (403 CONTA_BLOQUEADA se bloqueado)
 - `POST /logout` - Logout
-- `GET /me` - Utilizador atual
-- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica)
-- `POST /recuperacao/verificar` - Verificar código e alterar senha
+- `GET /me` - Utilizador atual (403 CONTA_BLOQUEADA se bloqueado)
+- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica; bloqueados não recebem)
+- `POST /recuperacao/verificar` - Verificar código e alterar senha (bloqueados rejeitados)
 
 ### Bolsas (`/api/bolsas`)
 - `GET /` - Listar (com filtros search, area, status)
@@ -136,7 +136,7 @@ Após executar o seed:
 - `GET /minhas` - Minhas candidaturas (Estudante)
 - `GET /` - Todas (Admin)
 - `PUT /:id/estado` - Alterar estado (Admin)
-- `DELETE /:id` - Cancelar (Estudante)
+- `DELETE /:id` - Cancelar (Estudante) - apenas pendentes
 
 ### Mentorias (`/api/mentorias`)
 - `GET /mentores` - Listar mentores (sem email/telefone)
@@ -161,14 +161,15 @@ Após executar o seed:
 - `GET /minha-area` - Dados do utilizador autenticado
 
 ### Utilizadores (`/api/utilizadores`)
-- `GET /` - Listar (Admin)
-- `DELETE /:id` - Remover (Admin). Impede apagar própria conta ou último admin
+- `GET /` - Listar (Admin) com campo `bloqueado`
+- `PUT /:id/bloqueio` - Bloquear/Desbloquear (Admin). Não pode bloquear a si próprio nem outro ADMIN
 
 ## Regras de permissões
 - **Mentor**: gere disponibilidades e só pode alterar estado das suas mentorias conforme matriz (PENDENTE→CONFIRMADA/RECUSADA/CANCELADA, CONFIRMADA→CONCLUIDA/CANCELADA)
 - **Estudante**: só pode cancelar as suas mentorias (PENDENTE/CONFIRMADA). Não pode confirmar/concluir
 - **Admin**: transições válidas conforme regras, pode gerir tudo. Não pode apagar própria conta nem último admin
-- **Navbar**: Visitantes veem Início, Dashboard, Bolsas, Mentores, Entrar, Registar. Com sessão: adiciona Minha Conta; Mentorias apenas para não-Admin; Admin apenas para ADMIN.
+- **Navbar**: Visitantes veem Início, Dashboard, Bolsas, Mentores, Entrar, Registar. Com sessão: adiciona Minha Conta e Candidaturas (apenas ESTUDANTE); Mentorias apenas para não-Admin; Admin apenas para ADMIN.
+- **Bloqueio**: Contas bloqueadas recebem 403 com `codigo: CONTA_BLOQUEADA`. Login recusado mesmo com senha correta. Mentores bloqueados não aparecem publicamente. Admin não pode bloquear a si próprio nem outros admins. Histórico de sessões termina com efeito imediato.
 
 ## Tecnologias
 

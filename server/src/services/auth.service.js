@@ -23,6 +23,7 @@ export const login = async (email, senha) => {
   if (!user) throw { status: 401, message: 'Credenciais inválidas' }
   const ok = await bcrypt.compare(senha, user.senha)
   if (!ok) throw { status: 401, message: 'Credenciais inválidas' }
+  if (user.bloqueado) throw { status: 403, message: 'A sua conta foi bloqueada. Contacte o administrador.', codigo: 'CONTA_BLOQUEADA' }
   const token = gerarToken(user)
   const safe = { id: user.id, nome: user.nome, email: user.email, role: user.role }
   return { user: safe, token }
@@ -30,7 +31,7 @@ export const login = async (email, senha) => {
 
 export const pedirRecuperacao = async (email) => {
   const user = await prisma.user.findUnique({ where: { email } })
-  if (!user) {
+  if (!user || user.bloqueado) {
     // Resposta genérica
     return { mensagem: 'Se o email existir, será enviado um código de recuperação.' }
   }
@@ -46,7 +47,7 @@ export const pedirRecuperacao = async (email) => {
 
 export const verificarRecuperacao = async (email, codigo, novaSenha) => {
   const user = await prisma.user.findUnique({ where: { email } })
-  if (!user) throw { status: 400, message: 'Código inválido' }
+  if (!user || user.bloqueado) throw { status: 400, message: 'Código inválido' }
   const reset = await prisma.passwordReset.findFirst({
     where: { userId: user.id, used: false, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
