@@ -5,10 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import LangSwitch from './LangSwitch'
 import ThemeToggle from './ThemeToggle'
+import { useRealtimeStatus } from '../context/RealtimeContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { t } = useTranslation('nav')
+  const { t: tc } = useTranslation('common')
+  const { online } = useRealtimeStatus()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -18,7 +21,7 @@ export default function Navbar() {
     setOpen(false)
   }
   const links = [
-    ['/', t('home')],
+    ...(!user ? [['/', t('home')]] : []),
     ['/dashboard', t('dashboard')],
     ['/bolsas', t('scholarships')],
     ['/mentores', t('mentors')],
@@ -45,10 +48,14 @@ export default function Navbar() {
     </>
   )
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-surface/85 shadow-sm backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-surface/90 shadow-sm backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-content items-center justify-between gap-4 px-5">
         <div className="flex min-w-0 items-center gap-6">
-          <Link to="/" aria-label="B&M – Bolsas e Mentoria" className="shrink-0">
+          <Link
+            to={user ? '/dashboard' : '/'}
+            aria-label="B&M – Bolsas e Mentoria"
+            className="shrink-0"
+          >
             <img
               src="/logos/logo-light.png"
               alt="B&M – Bolsas e Mentoria"
@@ -63,6 +70,11 @@ export default function Navbar() {
           <nav className="hidden items-center gap-4 xl:flex">{navLinks}</nav>
         </div>
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
+          <span
+            title={tc(online ? 'liveOnline' : 'liveOffline')}
+            aria-label={tc(online ? 'liveOnline' : 'liveOffline')}
+            className={`h-2.5 w-2.5 rounded-full ${online ? 'bg-accent' : 'bg-muted/60'}`}
+          />
           <LangSwitch />
           <ThemeToggle />
           {!user ? (
@@ -112,6 +124,11 @@ export default function Navbar() {
           )}
         </div>
         <div className="flex items-center gap-2 xl:hidden">
+          <span
+            title={tc(online ? 'liveOnline' : 'liveOffline')}
+            aria-label={tc(online ? 'liveOnline' : 'liveOffline')}
+            className={`h-2 w-2 rounded-full ${online ? 'bg-accent' : 'bg-muted/60'}`}
+          />
           <LangSwitch />
           <ThemeToggle />
           <button

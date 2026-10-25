@@ -10,9 +10,9 @@ export function ToastProvider({ children }) {
     [],
   )
   const show = useCallback(
-    (message, type) => {
+    (message, type, href) => {
       const id = `${Date.now()}-${Math.random()}`
-      setItems((current) => [...current, { id, message, type }])
+      setItems((current) => [...current, { id, message, type, href }])
       window.setTimeout(() => dismiss(id), 4500)
     },
     [dismiss],
@@ -21,6 +21,7 @@ export function ToastProvider({ children }) {
     () => ({
       success: (message) => show(message, 'success'),
       error: (message) => show(message, 'error'),
+      successLink: (message, href) => show(message, 'success', href),
     }),
     [show],
   )
@@ -32,7 +33,7 @@ export function ToastProvider({ children }) {
         aria-live="polite"
       >
         {items.map((item) => (
-          <Toast key={item.id} type={item.type}>
+          <Toast key={item.id} type={item.type} href={item.href}>
             {item.message}
           </Toast>
         ))}
@@ -41,6 +42,7 @@ export function ToastProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const context = useContext(ToastContext)
   if (!context) throw new Error('useToast deve ser utilizado dentro de ToastProvider')

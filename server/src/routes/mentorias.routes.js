@@ -1,5 +1,16 @@
 import { Router } from 'express'
-import { criarDisponibilidade, listarDisponibilidades, listarMentores, obterMentor, agendar, minhasMentorias, atualizarEstadoMentoria, listarTodasMentorias, removerDisponibilidade, minhasDisponibilidades } from '../controllers/mentorias.controller.js'
+import {
+  criarDisponibilidade,
+  listarDisponibilidades,
+  listarMentores,
+  obterMentor,
+  agendar,
+  minhasMentorias,
+  atualizarEstadoMentoria,
+  listarTodasMentorias,
+  removerDisponibilidade,
+  minhasDisponibilidades,
+} from '../controllers/mentorias.controller.js'
 import { autenticar, autorizar } from '../middlewares/auth.js'
 
 const router = Router()

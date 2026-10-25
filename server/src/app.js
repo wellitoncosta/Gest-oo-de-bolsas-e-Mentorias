@@ -9,12 +9,15 @@ import contaRoutes from './routes/conta.routes.js'
 import utilizadoresRoutes from './routes/utilizadores.routes.js'
 import dashboardRoutes from './routes/dashboard.routes.js'
 import { erroHandler } from './middlewares/erro.js'
+import { ligarEventos } from './controllers/eventos.controller.js'
 
 const app = express()
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }))
 app.use(express.json())
 app.use(cookieParser())
 
+// The application has no compression middleware; keep this streaming route ahead of the API routers.
+app.get('/api/eventos', ligarEventos)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 
 app.use('/api/auth', authRoutes)

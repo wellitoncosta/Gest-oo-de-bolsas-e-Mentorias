@@ -1,5 +1,11 @@
 import { Router } from 'express'
-import { candidatar, minhasCandidaturas, listarTodas, atualizarEstado, cancelar } from '../controllers/candidaturas.controller.js'
+import {
+  candidatar,
+  minhasCandidaturas,
+  listarTodas,
+  atualizarEstado,
+  cancelar,
+} from '../controllers/candidaturas.controller.js'
 import { autenticar, autorizar } from '../middlewares/auth.js'
 
 const router = Router()

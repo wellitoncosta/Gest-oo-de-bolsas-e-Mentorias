@@ -1,30 +1,65 @@
 import * as authService from '../services/auth.service.js'
 import { z } from 'zod'
 import { timezoneValido } from '../utils/datas.js'
+import prisma from '../config/db.js'
 
 const registarSchema = z.object({
   nome: z.string().min(2, 'Nome obrigatório'),
   email: z.string().trim().toLowerCase().email('Email inválido'),
   senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
   fusoHorario: z.string().refine(timezoneValido, 'Fuso horário inválido').default('Africa/Luanda'),
-  role: z.enum(['ESTUDANTE', 'MENTOR']).optional()
+  instituicao: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+    z
+      .string()
+      .trim()
+      .max(120, 'A instituição deve ter no máximo 120 caracteres.')
+      .nullable()
+      .optional(),
+  ),
+  role: z.enum(['ESTUDANTE', 'MENTOR']).optional(),
 })
+
+export const instituicoes = async (req, res, next) => {
+  try {
+    const rows = await prisma.user.findMany({
+      where: { instituicao: { not: null } },
+      distinct: ['instituicao'],
+      orderBy: { instituicao: 'asc' },
+      take: 50,
+      select: { instituicao: true },
+    })
+    res.json(rows.map((row) => row.instituicao).filter(Boolean))
+  } catch (err) {
+    next(err)
+  }
+}
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Email inválido'),
-  senha: z.string().min(1, 'Senha obrigatória')
+  senha: z.string().min(1, 'Senha obrigatória'),
 })
 
 const pedirSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido') })
-const validarCodigoSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), codigo: z.string().trim().regex(/^\d{6}$/, 'O código deve ter 6 dígitos') })
-const redefinirSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), resetToken: z.string().min(1, 'Token inválido'), novaSenha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres') })
+const validarCodigoSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  codigo: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'O código deve ter 6 dígitos'),
+})
+const redefinirSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  resetToken: z.string().min(1, 'Token inválido'),
+  novaSenha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+})
 
 const setCookie = (res, token) => {
   res.cookie('token', token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 }
 
@@ -34,7 +69,9 @@ export const registar = async (req, res, next) => {
     const { user, token } = await authService.registar(dados)
     setCookie(res, token)
     res.status(201).json({ user, token })
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const login = async (req, res, next) => {
@@ -43,7 +80,9 @@ export const login = async (req, res, next) => {
     const { user, token } = await authService.login(email, senha)
     setCookie(res, token)
     res.json({ user, token })
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const logout = async (req, res) => {
@@ -60,7 +99,9 @@ export const pedirRecuperacao = async (req, res, next) => {
     const { email } = pedirSchema.parse(req.body)
     const r = await authService.pedirRecuperacao(email)
     res.status(200).json(r)
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const validarCodigo = async (req, res, next) => {
@@ -68,7 +109,9 @@ export const validarCodigo = async (req, res, next) => {
     const { email, codigo } = validarCodigoSchema.parse(req.body)
     const r = await authService.validarCodigo(email, codigo)
     res.status(200).json(r)
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 }
 
 export const redefinirSenha = async (req, res, next) => {
@@ -76,5 +119,7 @@ export const redefinirSenha = async (req, res, next) => {
     const { email, resetToken, novaSenha } = redefinirSchema.parse(req.body)
     const r = await authService.redefinirSenha(email, resetToken, novaSenha)
     res.status(200).json(r)
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 }

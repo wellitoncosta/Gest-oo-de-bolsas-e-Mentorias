@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,8 @@ import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input, Select } from '../components/ui/Field'
 import { fusoDoNavegador } from '../services/datas'
+import BackButton from '../components/BackButton'
+import api from '../services/api'
 
 export default function Registo() {
   const [form, setForm] = useState({
@@ -14,11 +16,19 @@ export default function Registo() {
     senha: '',
     role: 'ESTUDANTE',
     fusoHorario: fusoDoNavegador(),
+    instituicao: '',
   })
+  const [instituicoes, setInstituicoes] = useState([])
   const [erro, setErro] = useState('')
   const { registar } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation(['auth', 'common'])
+  useEffect(() => {
+    api
+      .get('/auth/instituicoes')
+      .then(({ data }) => setInstituicoes(data))
+      .catch(() => {})
+  }, [])
   const update = (key) => (event) => setForm((value) => ({ ...value, [key]: event.target.value }))
   const submeter = async (e) => {
     e.preventDefault()
@@ -59,6 +69,7 @@ export default function Registo() {
           onSubmit={submeter}
           className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-brand/5 sm:p-8"
         >
+          <BackButton to="/" />
           {erro && (
             <div
               role="alert"
@@ -74,6 +85,18 @@ export default function Registo() {
             autoComplete="name"
             required
           />
+          <Input
+            label={form.role === 'MENTOR' ? t('auth:institutionCompany') : t('auth:institution')}
+            value={form.instituicao}
+            onChange={update('instituicao')}
+            list="institution-options"
+            maxLength={120}
+          />
+          <datalist id="institution-options">
+            {instituicoes.map((nome) => (
+              <option key={nome} value={nome} />
+            ))}
+          </datalist>
           <Input
             type="email"
             label={t('common:email')}

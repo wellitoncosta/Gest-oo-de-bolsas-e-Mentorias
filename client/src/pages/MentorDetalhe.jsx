@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -8,6 +8,10 @@ import { formatarDataHora, formatarHora, fusoDoNavegador } from '../services/dat
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 import { CalendarDays, UserRound } from 'lucide-react'
+import BackButton from '../components/BackButton'
+import { useRealtime } from '../context/RealtimeContext'
+import AreaSelect from '../components/AreaSelect'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
 
 export default function MentorDetalhe() {
   const { id } = useParams()
@@ -22,23 +26,33 @@ export default function MentorDetalhe() {
   const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const carregar = async () => {
-      try {
-        const [m, d] = await Promise.all([
-          api.get(`/mentorias/mentores/${id}`),
-          api.get(`/mentorias/disponibilidades?mentorId=${id}`),
-        ])
-        setMentor(m.data)
-        setDisps(d.data)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
+  const carregar = useCallback(async () => {
+    try {
+      const [m, d] = await Promise.all([
+        api.get(`/mentorias/mentores/${id}`),
+        api.get(`/mentorias/disponibilidades?mentorId=${id}`),
+      ])
+      setMentor(m.data)
+      setDisps(d.data)
+      setSel((current) => (d.data.some((disp) => disp.id === current) ? current : ''))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
-    carregar()
   }, [id])
+  useEffect(() => {
+    carregar()
+  }, [carregar])
+  useRealtime(
+    ['disponibilidade:alterada', 'mentoria:nova', 'mentoria:estado'],
+    ({ evento, dados }) => {
+      carregar()
+      if (evento === 'disponibilidade:alterada' && (!dados.mentorId || dados.mentorId === id)) {
+        setSucesso(t('mentoring:availabilityUpdated'))
+      }
+    },
+  )
 
   const agendar = async () => {
     if (!user) {
@@ -78,16 +92,28 @@ export default function MentorDetalhe() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <BackButton to="/mentores" label={t('mentoring:backToMentors')} className="mb-3" />
         <div className="flex items-center gap-4">
           <span className="grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-brand dark:text-accent">
             <UserRound size={24} />
           </span>
           <div>
             <h1 className="text-2xl font-bold mb-2">{mentor.nome}</h1>
-            {mentor.area && <p className="text-muted">{mentor.area}</p>}
+            {mentor.area && (
+              <AreaSelect
+                value={mentor.area}
+                disabled
+                className="appearance-none bg-transparent text-sm text-muted"
+              />
+            )}
           </div>
         </div>
-        {mentor.biografia && <p className="text-text">{mentor.biografia}</p>}
+        {mentor.biografia && (
+          <p className="text-text">{conteudo(mentor, 'biografia', i18n.language)}</p>
+        )}
+        {conteudoTemFallback(mentor, ['biografia'], i18n.language) && (
+          <p className="mt-1 text-xs text-muted">{t('common:contentFallback')}</p>
+        )}
       </div>
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">

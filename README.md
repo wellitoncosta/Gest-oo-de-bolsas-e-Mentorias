@@ -91,6 +91,18 @@ Ou a partir da raiz:
 npm run seed
 ```
 
+### Conteúdo em português e inglês
+
+As bolsas guardam os campos originais em português e os campos opcionais `tituloEn`, `descricaoEn`, `requisitosEn` e `valorEn`. Mentores podem guardar `biografiaEn`. As áreas são armazenadas como chaves estáveis (`tecnologia`, `engenharia`, `saude`, `educacao`, `gestao`, `ciencias`, `artes` e `outra`) e apresentadas com tradução conforme o idioma ativo.
+
+Para adicionar os campos e normalizar as áreas de uma base existente, execute na pasta `server/`, indicando primeiro uma cópia de teste da base:
+
+```bash
+npm run migrate:content -- caminho/para/dev.db
+```
+
+O script é idempotente e aceita um caminho de base explícito. As traduções em inglês são opcionais; quando faltam, o cliente mostra o texto original e indica que está disponível apenas em português.
+
 ## Executar a aplicação
 
 A partir da raiz do projeto:
@@ -159,6 +171,7 @@ Após executar o seed:
 
 ### Conta (`/api/conta`)
 - `GET /` - Ver perfil
+- `GET /resumo` - Contagens e atividade recente do utilizador autenticado
 - `PUT /` - Editar perfil
 - `PUT /senha` - Alterar senha
 - `DELETE /` - Apagar conta (exige senha atual no body; impede apagar último admin)
@@ -211,3 +224,19 @@ As disponibilidades guardam `inicio` e `fim` como instantes UTC. Os campos `data
 `Mentoria` também contém os campos opcionais `bolsaId`, `linkReuniao`, `avaliacao`, `comentarioAvaliacao` e `notaMentor`. `Candidatura` contém `notaInterna` e `pontuacao`. O link de reunião é copiado para a mentoria quando confirmada e só é devolvido aos seus participantes.
 
 Antes de migrar a base existente, faça uma cópia de `server/prisma/dev.db`. Execute `node prisma/migrar-utc.js` dentro de `server/` (ou indique o caminho de outra base SQLite). O script converte as datas legadas interpretando-as em `Africa/Luanda` (UTC+1), pode ser repetido com segurança e apresenta um relatório. Depois sincronize o schema com `npx prisma db push` e gere o cliente com `npx prisma generate`. Para disponibilidades novas, envie `inicio` e `fim` em ISO UTC; os campos legados continuam a ser aceites nas rotas existentes.
+
+## Atualizações em tempo real (SSE)
+
+O cliente abre `GET /api/eventos` com `EventSource` e credenciais. Visitantes recebem apenas eventos públicos. Sessões válidas são associadas ao utilizador e cargo; eventos de candidatura, mentoria e bloqueio são enviados somente aos destinatários indicados abaixo. O servidor envia heartbeat a cada 25 segundos e o cliente tenta reconectar com backoff. Se a ligação cair, as páginas consultam novamente os dados a cada 30 segundos e também ao voltar ao separador.
+
+| Evento | Destinatários | Conteúdo |
+|---|---|---|
+| `bolsa:criada`, `bolsa:atualizada`, `bolsa:removida` | Todos | Campos públicos mínimos da bolsa (ou o seu ID ao remover) |
+| `candidatura:nova` | Administradores | ID da candidatura, utilizador e bolsa |
+| `candidatura:estado` | Estudante dono e administradores | ID e estado |
+| `mentoria:nova`, `mentoria:estado` | Mentor, estudante e administradores | ID, participantes e estado |
+| `disponibilidade:alterada` | Todos | ID do mentor |
+| `estatisticas:alteradas` | Todos | Sinal agregado, com debounce de 2 segundos |
+| `conta:bloqueada` | Utilizador afetado | ID do utilizador; o cliente termina a sessão |
+
+Para conferir em duas janelas do navegador, inicie `npm run dev`, autentique um estudante numa janela e um administrador na outra. Deixe ambas abertas em Bolsas/Mentorias, crie uma bolsa ou altere uma candidatura no painel Admin e confirme a atualização sem recarregar a página. Para reproduzir o teste automatizado, execute o seed num ambiente de desenvolvimento e rode `npm run test:sse` dentro de `server/`; o script liga três clientes SSE, cria e apaga uma bolsa temporária como admin, e verifica que o evento privado de candidatura não chega a outro estudante. É possível fornecer credenciais de teste com `SSE_TEST_ADMIN_EMAIL`, `SSE_TEST_ADMIN_PASSWORD`, `SSE_TEST_STUDENT_EMAIL`, `SSE_TEST_STUDENT_PASSWORD`, `SSE_TEST_OTHER_EMAIL` e `SSE_TEST_OTHER_PASSWORD`, ou trocar o endereço com `SSE_API_URL`.

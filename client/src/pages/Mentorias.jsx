@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,7 @@ import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 import Badge from '../components/ui/Badge'
 import { aUTC, formatarDataHora, formatarHora, fusoDoNavegador } from '../services/datas'
+import { useRealtime } from '../context/RealtimeContext'
 
 export default function Mentorias() {
   const { user } = useAuth()
@@ -20,7 +21,7 @@ export default function Mentorias() {
   const [form, setForm] = useState({ data: '', horaInicio: '', horaFim: '' })
   const [loading, setLoading] = useState(true)
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     try {
       const res = await api.get('/mentorias/minhas')
       setMentorias(res.data)
@@ -33,11 +34,16 @@ export default function Mentorias() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     carregar()
-  }, [user])
+  }, [carregar])
+  useRealtime(['mentoria:nova', 'mentoria:estado', 'disponibilidade:alterada'], ({ evento }) => {
+    carregar()
+    if (evento === 'mentoria:nova') toast.success(t('mentoring:newRequest'))
+    if (evento === 'mentoria:estado') toast.success(t('mentoring:statusUpdated'))
+  })
 
   const atualizar = async (id, status) => {
     try {
@@ -124,7 +130,7 @@ export default function Mentorias() {
             {horarios.map((h) => (
               <div
                 key={h.id}
-                className="bg-surface p-3 rounded shadow flex justify-between items-center"
+                className="animate-fade-in bg-surface p-3 rounded shadow flex justify-between items-center"
               >
                 <div>
                   <div className="font-medium">
@@ -161,7 +167,7 @@ export default function Mentorias() {
       ) : (
         <div className="space-y-3">
           {mentorias.map((m) => (
-            <div key={m.id} className="bg-surface p-4 rounded shadow">
+            <div key={m.id} className="animate-fade-in bg-surface p-4 rounded shadow">
               <div className="flex justify-between mb-2">
                 <div>
                   <div className="font-bold">{m.tema}</div>

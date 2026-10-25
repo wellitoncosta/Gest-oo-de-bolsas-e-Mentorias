@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 import { localeFor } from '../i18n'
@@ -8,6 +8,8 @@ import { useConfirm } from '../context/ConfirmContext'
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 import Badge from '../components/ui/Badge'
+import { useRealtime } from '../context/RealtimeContext'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
 
 export default function MinhasCandidaturas() {
   const { t, i18n } = useTranslation(['scholarships', 'common', 'mentoring'])
@@ -16,7 +18,7 @@ export default function MinhasCandidaturas() {
   const [cands, setCands] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     try {
       const res = await api.get('/candidaturas/minhas')
       setCands(res.data)
@@ -25,11 +27,15 @@ export default function MinhasCandidaturas() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     carregar()
-  }, [])
+  }, [carregar])
+  useRealtime(['candidatura:estado', 'estatisticas:alteradas'], ({ evento }) => {
+    carregar()
+    if (evento === 'candidatura:estado') toast.success(t('scholarships:applicationStatusUpdated'))
+  })
 
   const cancelar = async (id) => {
     if (!(await confirm({ message: t('mentoring:cancelConfirm') }))) return
@@ -59,10 +65,13 @@ export default function MinhasCandidaturas() {
       ) : (
         <div className="space-y-3">
           {cands.map((c) => (
-            <div key={c.id} className="bg-surface p-4 rounded shadow">
+            <div key={c.id} className="animate-fade-in bg-surface p-4 rounded shadow">
               <div className="flex justify-between mb-2">
                 <div>
-                  <div className="font-bold">{c.bolsa?.titulo}</div>
+                  <div className="font-bold">{conteudo(c.bolsa, 'titulo', i18n.language)}</div>
+                  {conteudoTemFallback(c.bolsa, ['titulo'], i18n.language) && (
+                    <div className="text-xs text-muted">{t('common:contentFallback')}</div>
+                  )}
                   <div className="text-sm text-muted">{c.bolsa?.entidade}</div>
                   <div className="text-sm text-muted">
                     {c.createdAt

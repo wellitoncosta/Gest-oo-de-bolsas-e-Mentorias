@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +9,10 @@ import Badge from '../components/ui/Badge'
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 import { Building2, CalendarDays, Coins, MapPin } from 'lucide-react'
+import BackButton from '../components/BackButton'
+import { useRealtime } from '../context/RealtimeContext'
+import AreaSelect from '../components/AreaSelect'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
 
 export default function BolsaDetalhe() {
   const { id } = useParams()
@@ -21,19 +25,23 @@ export default function BolsaDetalhe() {
   const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const carregar = async () => {
-      try {
-        const res = await api.get(`/bolsas/${id}`)
-        setBolsa(res.data)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
+  const carregar = useCallback(async () => {
+    try {
+      const res = await api.get(`/bolsas/${id}`)
+      setBolsa(res.data)
+    } catch (e) {
+      if (e.response?.status === 404) setBolsa(null)
+      else console.error(e)
+    } finally {
+      setLoading(false)
     }
-    carregar()
   }, [id])
+  useEffect(() => {
+    carregar()
+  }, [carregar])
+  useRealtime(['bolsa:atualizada', 'bolsa:removida'], ({ dados }) => {
+    if (!dados.id || dados.id === id) carregar()
+  })
 
   const candidatar = async () => {
     if (!user) {
@@ -72,8 +80,9 @@ export default function BolsaDetalhe() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+        <BackButton to="/bolsas" label={t('scholarships:backToScholarships')} className="mb-3" />
         <div className="flex justify-between mb-4">
-          <h1 className="text-2xl font-bold">{bolsa.titulo}</h1>
+          <h1 className="text-2xl font-bold">{conteudo(bolsa, 'titulo', i18n.language)}</h1>
           <Badge
             className="h-fit"
             tone={bolsa.status === 'ABERTA' && !prazoPassado ? 'success' : 'neutral'}
@@ -88,18 +97,26 @@ export default function BolsaDetalhe() {
           </span>
           <span className="inline-flex items-center gap-2">
             <MapPin size={16} />
-            {bolsa.area}
+            <AreaSelect
+              value={bolsa.area}
+              disabled
+              className="appearance-none bg-transparent text-sm"
+            />
           </span>
         </div>
         <div className="space-y-4 mb-6">
           <div>
             <h2 className="font-semibold">{t('common:description')}</h2>
-            <p className="text-text whitespace-pre-wrap">{bolsa.descricao}</p>
+            <p className="text-text whitespace-pre-wrap">
+              {conteudo(bolsa, 'descricao', i18n.language)}
+            </p>
           </div>
           {bolsa.requisitos && (
             <div>
               <h2 className="font-semibold">{t('common:requirements')}</h2>
-              <p className="text-text whitespace-pre-wrap">{bolsa.requisitos}</p>
+              <p className="text-text whitespace-pre-wrap">
+                {conteudo(bolsa, 'requisitos', i18n.language)}
+              </p>
             </div>
           )}
           {bolsa.valor && (
@@ -108,7 +125,7 @@ export default function BolsaDetalhe() {
                 <Coins size={17} />
                 {t('common:amount')}
               </h2>
-              <p className="text-text">{bolsa.valor}</p>
+              <p className="text-text">{conteudo(bolsa, 'valor', i18n.language)}</p>
             </div>
           )}
           <div>
@@ -121,6 +138,11 @@ export default function BolsaDetalhe() {
             </p>
           </div>
         </div>
+        {conteudoTemFallback(
+          bolsa,
+          ['titulo', 'descricao', 'requisitos', 'valor'],
+          i18n.language,
+        ) && <p className="mb-4 text-xs text-muted">{t('common:contentFallback')}</p>}
         {podeCandidatar && (
           <div className="border-t pt-4">
             <h2 className="font-semibold mb-2">{t('scholarships:apply')}</h2>

@@ -21,9 +21,11 @@ function toUtc(date, time) {
 
 try {
   const columns = await prisma.$queryRawUnsafe('PRAGMA table_info("DisponibilidadeMentor")')
-  const columnNames = new Set(columns.map(column => column.name))
+  const columnNames = new Set(columns.map((column) => column.name))
   if (!columnNames.has('inicio')) {
-    await prisma.$executeRawUnsafe('ALTER TABLE "DisponibilidadeMentor" ADD COLUMN "inicio" DATETIME')
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE "DisponibilidadeMentor" ADD COLUMN "inicio" DATETIME',
+    )
   }
   if (!columnNames.has('fim')) {
     await prisma.$executeRawUnsafe('ALTER TABLE "DisponibilidadeMentor" ADD COLUMN "fim" DATETIME')
@@ -58,7 +60,9 @@ try {
     migrated += 1
   }
 
-  console.log(`Migração UTC concluída: ${migrated} migrados, ${alreadyMigrated} já migrados, ${invalid} inválidos, ${rows.length} total.`)
+  console.log(
+    `Migração UTC concluída: ${migrated} migrados, ${alreadyMigrated} já migrados, ${invalid} inválidos, ${rows.length} total.`,
+  )
   console.log(`Base usada: ${databaseFile}`)
 } catch (error) {
   console.error('Falha ao migrar horários para UTC:', error)

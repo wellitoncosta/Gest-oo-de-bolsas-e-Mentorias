@@ -15,6 +15,7 @@ i18n
     resources: {
       pt: {
         ...pt,
+        areas: pt.areas,
         home: { ...pt.home, ...homeExtraPt },
         errors: pt.errors,
         mentoring: { ...pt.mentoring, ...feedbackPt.mentoring },
@@ -24,6 +25,7 @@ i18n
       },
       en: {
         ...en,
+        areas: en.areas,
         home: { ...en.home, ...homeExtraEn },
         errors: en.errors,
         mentoring: { ...en.mentoring, ...feedbackEn.mentoring },
@@ -36,6 +38,7 @@ i18n
     supportedLngs: ['pt', 'en'],
     ns: [
       'common',
+      'areas',
       'nav',
       'auth',
       'home',

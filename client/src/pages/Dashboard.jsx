@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -15,6 +15,8 @@ import {
 import { useTranslation } from 'react-i18next'
 import { traduzirEstado } from '../services/traduzirErro'
 import Skeleton from '../components/ui/Skeleton'
+import { useRealtime } from '../context/RealtimeContext'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
 
 const colors = [
   'rgb(var(--brand))',
@@ -28,23 +30,40 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null),
     [minha, setMinha] = useState(null),
     [loading, setLoading] = useState(true)
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.get('/dashboard/estatisticas')
-        setStats(res.data)
-        if (user) {
-          const personal = await api.get('/dashboard/minha-area')
-          setMinha(personal.data)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
+  const load = useCallback(async () => {
+    try {
+      const res = await api.get('/dashboard/estatisticas')
+      setStats(res.data)
+      if (user) {
+        const personal = await api.get('/dashboard/minha-area')
+        setMinha(personal.data)
       }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [user])
+  const refreshTimer = useRef(null)
+  useEffect(() => {
+    load()
+  }, [load])
+  useRealtime(
+    [
+      'estatisticas:alteradas',
+      'bolsa:criada',
+      'bolsa:atualizada',
+      'bolsa:removida',
+      'candidatura:nova',
+      'candidatura:estado',
+      'mentoria:nova',
+      'mentoria:estado',
+    ],
+    () => {
+      window.clearTimeout(refreshTimer.current)
+      refreshTimer.current = window.setTimeout(load, 300)
+    },
+  )
   if (loading)
     return (
       <div className="mx-auto grid max-w-content gap-4 px-5 py-12">
@@ -67,7 +86,10 @@ export default function Dashboard() {
       fill: colors[i % colors.length],
     })) || []
   const byArea =
-    stats?.bolsasPorArea?.map((item) => ({ name: item.area, total: item._count.area })) || []
+    stats?.bolsasPorArea?.map((item) => ({
+      name: i18n.t(`areas:${item.area}`),
+      total: item._count.area,
+    })) || []
   const kpis = [
     [t('dashboard:openScholarships'), stats?.bolsasAbertas || 0],
     [t('dashboard:mentors'), stats?.totalMentores || 0],
@@ -140,7 +162,12 @@ export default function Dashboard() {
                 <ul className="space-y-2">
                   {minha.candidaturas.slice(0, 5).map((c) => (
                     <li key={c.id} className="rounded-xl border border-border p-3">
-                      <div className="font-medium">{c.bolsa.titulo}</div>
+                      <div className="font-medium">
+                        {conteudo(c.bolsa, 'titulo', i18n.language)}
+                      </div>
+                      {conteudoTemFallback(c.bolsa, ['titulo'], i18n.language) && (
+                        <div className="text-xs text-muted">{i18n.t('common:contentFallback')}</div>
+                      )}
                       <div className="text-sm text-muted">{traduzirEstado(c.status)}</div>
                     </li>
                   ))}

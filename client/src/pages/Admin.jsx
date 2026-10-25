@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { Routes, Route, NavLink } from 'react-router-dom'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 import { localeFor } from '../i18n'
@@ -9,31 +9,40 @@ import { useToast } from '../context/ToastContext'
 import Badge from '../components/ui/Badge'
 import EmptyState from '../components/ui/EmptyState'
 import Skeleton from '../components/ui/Skeleton'
+import { useRealtime } from '../context/RealtimeContext'
+import AreaSelect from '../components/AreaSelect'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
 
 function BolsasAdmin() {
-  const { t } = useTranslation(['admin', 'common'])
+  const { t, i18n } = useTranslation(['admin', 'common', 'areas'])
   const confirm = useConfirm()
   const toast = useToast()
   const [bolsas, setBolsas] = useState(null)
   const [form, setForm] = useState({
     titulo: '',
+    tituloEn: '',
     descricao: '',
+    descricaoEn: '',
     entidade: '',
     valor: '',
+    valorEn: '',
     requisitos: '',
+    requisitosEn: '',
     area: '',
     dataLimite: '',
     status: 'ABERTA',
   })
   const [editando, setEditando] = useState(null)
+  const [idiomaFormulario, setIdiomaFormulario] = useState('pt')
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     const res = await api.get('/bolsas')
     setBolsas(res.data)
-  }
+  }, [])
   useEffect(() => {
     carregar()
-  }, [])
+  }, [carregar])
+  useRealtime(['bolsa:criada', 'bolsa:atualizada', 'bolsa:removida'], () => carregar())
 
   const criar = async (e) => {
     e.preventDefault()
@@ -45,25 +54,35 @@ function BolsasAdmin() {
     }
     setForm({
       titulo: '',
+      tituloEn: '',
       descricao: '',
+      descricaoEn: '',
       entidade: '',
       valor: '',
+      valorEn: '',
       requisitos: '',
+      requisitosEn: '',
       area: '',
       dataLimite: '',
       status: 'ABERTA',
     })
+    setIdiomaFormulario('pt')
     carregar()
   }
 
   const editar = (b) => {
     setEditando(b.id)
+    setIdiomaFormulario('pt')
     setForm({
       titulo: b.titulo,
+      tituloEn: b.tituloEn || '',
       descricao: b.descricao,
+      descricaoEn: b.descricaoEn || '',
       entidade: b.entidade,
       valor: b.valor || '',
+      valorEn: b.valorEn || '',
       requisitos: b.requisitos || '',
+      requisitosEn: b.requisitosEn || '',
       area: b.area,
       dataLimite: b.dataLimite.split('T')[0],
       status: b.status,
@@ -84,12 +103,46 @@ function BolsasAdmin() {
         onSubmit={criar}
         className="bg-surface p-4 rounded shadow mb-6 grid md:grid-cols-2 gap-3"
       >
+        <div className="flex gap-2 md:col-span-2">
+          {['pt', 'en'].map((idioma) => (
+            <button
+              type="button"
+              key={idioma}
+              onClick={() => setIdiomaFormulario(idioma)}
+              className={`rounded-lg px-3 py-1.5 text-sm ${idiomaFormulario === idioma ? 'bg-brand text-white' : 'bg-bg'}`}
+            >
+              {idioma.toUpperCase()}
+            </button>
+          ))}
+          {idiomaFormulario === 'en' && (
+            <button
+              type="button"
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  tituloEn: f.titulo,
+                  descricaoEn: f.descricao,
+                  valorEn: f.valor,
+                  requisitosEn: f.requisitos,
+                }))
+              }
+              className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm"
+            >
+              {t('admin:copyPortuguese')}
+            </button>
+          )}
+        </div>
         <input
           placeholder={t('common:title')}
-          value={form.titulo}
-          onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          value={form[idiomaFormulario === 'en' ? 'tituloEn' : 'titulo']}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              [idiomaFormulario === 'en' ? 'tituloEn' : 'titulo']: e.target.value,
+            })
+          }
           className="rounded-xl border border-border px-3 py-2"
-          required
+          required={idiomaFormulario === 'pt'}
         />
         <input
           placeholder={t('common:organization')}
@@ -98,17 +151,20 @@ function BolsasAdmin() {
           className="rounded-xl border border-border px-3 py-2"
           required
         />
-        <input
-          placeholder={t('common:area')}
+        <AreaSelect
+          includeEmpty
+          emptyLabel={t('areas:choose')}
           value={form.area}
-          onChange={(e) => setForm({ ...form, area: e.target.value })}
+          onChange={(value) => setForm({ ...form, area: value })}
           className="rounded-xl border border-border px-3 py-2"
           required
         />
         <input
           placeholder={t('common:amount')}
-          value={form.valor}
-          onChange={(e) => setForm({ ...form, valor: e.target.value })}
+          value={form[idiomaFormulario === 'en' ? 'valorEn' : 'valor']}
+          onChange={(e) =>
+            setForm({ ...form, [idiomaFormulario === 'en' ? 'valorEn' : 'valor']: e.target.value })
+          }
           className="rounded-xl border border-border px-3 py-2"
         />
         <input
@@ -128,18 +184,34 @@ function BolsasAdmin() {
         </select>
         <textarea
           placeholder={t('common:description')}
-          value={form.descricao}
-          onChange={(e) => setForm({ ...form, descricao: e.target_value || e.target.value })}
+          value={form[idiomaFormulario === 'en' ? 'descricaoEn' : 'descricao']}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              [idiomaFormulario === 'en' ? 'descricaoEn' : 'descricao']: e.target.value,
+            })
+          }
           className="rounded-xl border border-border px-3 py-2 md:col-span-2"
           rows={2}
         ></textarea>
         <textarea
           placeholder={t('common:requirements')}
-          value={form.requisitos}
-          onChange={(e) => setForm({ ...form, requisitos: e.target.value })}
+          value={form[idiomaFormulario === 'en' ? 'requisitosEn' : 'requisitos']}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              [idiomaFormulario === 'en' ? 'requisitosEn' : 'requisitos']: e.target.value,
+            })
+          }
           className="rounded-xl border border-border px-3 py-2 md:col-span-2"
           rows={2}
         ></textarea>
+        {idiomaFormulario === 'pt' &&
+          ['tituloEn', 'descricaoEn', 'valorEn', 'requisitosEn'].some(
+            (campo) => !form[campo].trim(),
+          ) && (
+            <p className="text-sm text-amber-700 md:col-span-2">{t('admin:englishFieldsEmpty')}</p>
+          )}
         <button className="rounded-xl bg-brand px-4 py-2 text-bg md:col-span-2">
           {editando ? t('admin:update') : t('admin:create')}
         </button>
@@ -155,13 +227,18 @@ function BolsasAdmin() {
           {bolsas.map((b) => (
             <div
               key={b.id}
-              className="bg-surface p-3 rounded shadow flex justify-between items-center"
+              className="animate-fade-in bg-surface p-3 rounded shadow flex justify-between items-center"
             >
               <div>
-                <div className="font-medium">{b.titulo}</div>
+                <div className="font-medium">{conteudo(b, 'titulo', i18n.language)}</div>
                 <div className="text-sm text-muted">
-                  {b.entidade} • {traduzirEstado(b.status)}
+                  {b.entidade} • {t(`areas:${b.area}`)} • {traduzirEstado(b.status)}
                 </div>
+                {conteudoTemFallback(
+                  b,
+                  ['titulo', 'descricao', 'requisitos', 'valor'],
+                  i18n.language,
+                ) && <div className="text-xs text-muted">{t('common:contentFallback')}</div>}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => editar(b)} className="rounded-lg bg-bg px-3 py-1 text-sm">
@@ -188,13 +265,14 @@ function UtilizadoresAdmin() {
   const confirm = useConfirm()
   const [users, setUsers] = useState(null)
   const [erro, setErro] = useState('')
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     const res = await api.get('/utilizadores')
     setUsers(res.data)
-  }
+  }, [])
   useEffect(() => {
     carregar()
-  }, [])
+  }, [carregar])
+  useRealtime(['conta:bloqueada'], () => carregar())
   const alterar = async (u) => {
     setErro('')
     if (u.role === 'ADMIN') return
@@ -226,7 +304,7 @@ function UtilizadoresAdmin() {
           {users.map((u) => (
             <div
               key={u.id}
-              className="bg-surface p-3 rounded shadow flex justify-between items-center"
+              className="animate-fade-in bg-surface p-3 rounded shadow flex justify-between items-center"
             >
               <div>
                 <div className="font-medium">{u.nome}</div>
@@ -269,13 +347,14 @@ function CandidaturasAdmin() {
   const [pesquisa, setPesquisa] = useState('')
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     const res = await api.get('/candidaturas')
     setCands(res.data)
-  }
+  }, [])
   useEffect(() => {
     carregar()
-  }, [])
+  }, [carregar])
+  useRealtime(['candidatura:nova', 'candidatura:estado'], () => carregar())
   const atualizar = async (id, status) => {
     setErro('')
     setMsg('')
@@ -297,7 +376,11 @@ function CandidaturasAdmin() {
     if (filtro !== 'TODAS' && c.status !== filtro) return false
     if (pesquisa) {
       const p = pesquisa.toLowerCase()
-      if (!(c.bolsa?.titulo?.toLowerCase().includes(p) || c.user?.nome?.toLowerCase().includes(p)))
+      if (!(
+        c.bolsa?.titulo?.toLowerCase().includes(p) ||
+        c.bolsa?.tituloEn?.toLowerCase().includes(p) ||
+        c.user?.nome?.toLowerCase().includes(p)
+      ))
         return false
     }
     return true
@@ -335,11 +418,11 @@ function CandidaturasAdmin() {
       ) : (
         <div className="space-y-2">
           {filtradas.map((c) => (
-            <div key={c.id} className="bg-surface p-3 rounded shadow">
+            <div key={c.id} className="animate-fade-in bg-surface p-3 rounded shadow">
               <div className="flex justify-between mb-2">
                 <div>
                   <div className="font-medium">
-                    {c.user?.nome} ({c.user?.email}) - {c.bolsa?.titulo}
+                    {c.user?.nome} ({c.user?.email}) - {conteudo(c.bolsa, 'titulo', i18n.language)}
                   </div>
                   <div className="text-sm text-muted">
                     {c.createdAt
@@ -399,13 +482,14 @@ function CandidaturasAdmin() {
 function MentoriasAdmin() {
   const { t } = useTranslation(['admin', 'common'])
   const [mentorias, setMentorias] = useState(null)
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     const res = await api.get('/mentorias')
     setMentorias(res.data)
-  }
+  }, [])
   useEffect(() => {
     carregar()
-  }, [])
+  }, [carregar])
+  useRealtime(['mentoria:nova', 'mentoria:estado'], () => carregar())
   return (
     <div>
       <h2 className="font-bold text-xl mb-4">{t('admin:mentoring')}</h2>
@@ -418,7 +502,7 @@ function MentoriasAdmin() {
       ) : (
         <div className="space-y-2">
           {mentorias.map((m) => (
-            <div key={m.id} className="bg-surface p-3 rounded shadow">
+            <div key={m.id} className="animate-fade-in bg-surface p-3 rounded shadow">
               <div className="font-medium">{m.tema}</div>
               <div className="text-sm text-muted">
                 {t('admin:mentorStudent', { mentor: m.mentor.nome, student: m.estudante.nome })} •{' '}
@@ -438,20 +522,41 @@ export default function Admin() {
   return (
     <div className="max-w-content mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('admin:title')}</h1>
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <Link to="/admin" className="rounded-xl bg-brand px-4 py-2 text-bg">
+      <nav className="mb-6 flex flex-wrap gap-2" aria-label={t('admin:title')}>
+        <NavLink
+          end
+          to="/admin"
+          className={({ isActive }) =>
+            `rounded-xl px-4 py-2 text-sm font-medium ${isActive ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-text'}`
+          }
+        >
           {t('nav:scholarships')}
-        </Link>
-        <Link to="/admin/utilizadores" className="rounded-xl bg-bg px-4 py-2">
+        </NavLink>
+        <NavLink
+          to="/admin/utilizadores"
+          className={({ isActive }) =>
+            `rounded-xl px-4 py-2 text-sm font-medium ${isActive ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-text'}`
+          }
+        >
           {t('admin:users')}
-        </Link>
-        <Link to="/admin/candidaturas" className="rounded-xl bg-bg px-4 py-2">
+        </NavLink>
+        <NavLink
+          to="/admin/candidaturas"
+          className={({ isActive }) =>
+            `rounded-xl px-4 py-2 text-sm font-medium ${isActive ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-text'}`
+          }
+        >
           {t('admin:applications')}
-        </Link>
-        <Link to="/admin/mentorias" className="rounded-xl bg-bg px-4 py-2">
+        </NavLink>
+        <NavLink
+          to="/admin/mentorias"
+          className={({ isActive }) =>
+            `rounded-xl px-4 py-2 text-sm font-medium ${isActive ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-text'}`
+          }
+        >
           {t('admin:mentoring')}
-        </Link>
-      </div>
+        </NavLink>
+      </nav>
       <Routes>
         <Route path="/" element={<BolsasAdmin />} />
         <Route path="/utilizadores" element={<UtilizadoresAdmin />} />

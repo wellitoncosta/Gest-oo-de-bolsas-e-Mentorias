@@ -33,7 +33,7 @@ body {
   input,
   select,
   textarea {
-    @apply bg-surface text-text placeholder:text-muted;
+    @apply bg-surface-2 text-text placeholder:text-muted;
   }
 }
 

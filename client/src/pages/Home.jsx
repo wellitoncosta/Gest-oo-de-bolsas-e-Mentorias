@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -20,6 +20,11 @@ import KpiCard from '../components/ui/KpiCard'
 import Badge from '../components/ui/Badge'
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
+import { useRealtime } from '../context/RealtimeContext'
+import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
+import AreaSelect from '../components/AreaSelect'
+import { conteudo, conteudoTemFallback, formatarValor } from '../services/conteudo'
 
 function Reveal({ children, className = '' }) {
   const ref = useRef(null)
@@ -67,13 +72,16 @@ const initials = (name) =>
 
 export default function Home() {
   const { t, i18n } = useTranslation(['home', 'common', 'scholarships', 'mentoring', 'status'])
+  const toast = useToast()
+  const { user } = useAuth()
   const [stats, setStats] = useState({})
   const [scholarships, setScholarships] = useState([])
   const [mentors, setMentors] = useState([])
   const [loading, setLoading] = useState(true)
   const [faqOpen, setFaqOpen] = useState(0)
-  useEffect(() => {
-    Promise.allSettled([
+  const carregar = useCallback(async ({ silencioso = false } = {}) => {
+    if (!silencioso) setLoading(true)
+    await Promise.allSettled([
       api.get('/dashboard/estatisticas'),
       api.get('/bolsas'),
       api.get('/mentorias/mentores'),
@@ -88,6 +96,21 @@ export default function Home() {
       })
       .finally(() => setLoading(false))
   }, [])
+  useEffect(() => {
+    carregar()
+  }, [carregar])
+  useRealtime(
+    ['bolsa:criada', 'bolsa:atualizada', 'bolsa:removida', 'estatisticas:alteradas'],
+    ({ evento, dados }) => {
+      if (evento === 'bolsa:criada' && user?.role === 'ESTUDANTE') {
+        toast.successLink(
+          t('scholarships:newScholarship', { title: conteudo(dados, 'titulo', i18n.language) }),
+          `/bolsas/${dados.id}`,
+        )
+      }
+      carregar({ silencioso: true })
+    },
+  )
   const applications =
     stats.candidaturasPorEstado?.reduce((sum, item) => sum + item._count.status, 0) || 0
   const steps = ['discover', 'apply', 'mentor']
@@ -240,17 +263,25 @@ export default function Home() {
                   <Card key={item.id} className="group flex flex-col">
                     <div className="flex items-center justify-between gap-2">
                       <Badge tone="success">{t('openLabel')}</Badge>
-                      <span className="text-sm text-muted">{item.area}</span>
+                      <AreaSelect
+                        value={item.area}
+                        disabled
+                        className="appearance-none bg-transparent text-sm text-muted"
+                      />
                     </div>
                     <h3 className="mt-5 text-xl font-semibold group-hover:text-brand dark:group-hover:text-accent">
-                      {item.titulo}
+                      {conteudo(item, 'titulo', i18n.language)}
                     </h3>
+                    {conteudoTemFallback(item, ['titulo', 'valor'], i18n.language) && (
+                      <p className="mt-1 text-xs text-muted">{i18n.t('common:contentFallback')}</p>
+                    )}
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
                       {item.entidade}
                     </p>
                     <div className="mt-auto flex flex-wrap justify-between gap-2 border-t border-border pt-4">
                       <span className="font-semibold text-brand dark:text-accent">
-                        {item.valor || t('valueOnDetails')}
+                        {formatarValor(conteudo(item, 'valor', i18n.language), i18n.language) ||
+                          t('valueOnDetails')}
                       </span>
                       <span className="text-sm text-muted">
                         {t('deadline')}:{' '}
@@ -305,12 +336,19 @@ export default function Home() {
                     </span>
                     <div>
                       <h3 className="text-lg font-semibold">{mentor.nome}</h3>
-                      <p className="text-sm text-muted">{mentor.area}</p>
+                      <AreaSelect
+                        value={mentor.area}
+                        disabled
+                        className="appearance-none bg-transparent text-sm text-muted"
+                      />
                     </div>
                   </div>
                   <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">
-                    {mentor.biografia}
+                    {conteudo(mentor, 'biografia', i18n.language)}
                   </p>
+                  {conteudoTemFallback(mentor, ['biografia'], i18n.language) && (
+                    <p className="mt-1 text-xs text-muted">{i18n.t('common:contentFallback')}</p>
+                  )}
                   <Link
                     className="mt-5 inline-flex items-center gap-2 font-semibold text-brand dark:text-accent"
                     to={`/mentores/${mentor.id}`}

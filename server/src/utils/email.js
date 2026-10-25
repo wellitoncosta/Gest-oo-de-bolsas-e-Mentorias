@@ -16,7 +16,7 @@ const criarTransporter = () => {
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-    auth: { user: SMTP_USER, pass: SMTP_PASS }
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
   })
   return transporter
 }
@@ -40,7 +40,7 @@ export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
       from: MAIL_FROM || SMTP_USER,
       to: para,
       subject: assunto,
-      html
+      html,
     })
     return { enviado: true }
   } catch (err) {

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
+import BackButton from '../components/BackButton'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -54,6 +55,7 @@ export default function Login() {
           onSubmit={submeter}
           className="space-y-5 rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-brand/5 sm:p-8"
         >
+          <BackButton to="/" />
           {mensagem && (
             <div className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-sm text-text">
               {mensagem}

@@ -7,6 +7,8 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
 import Skeleton from './components/ui/Skeleton'
+import { useAuth } from './context/AuthContext'
+import { RealtimeProvider } from './context/RealtimeContext'
 
 const Home = lazy(() => import('./pages/Home'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -37,9 +39,15 @@ function RouteFallback() {
   )
 }
 
+function GuestOnly({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <RouteFallback />
+  return user ? <Navigate to="/dashboard" replace /> : children
+}
+
 function AppContent() {
   const location = useLocation()
-  const isAuth = ['/login', '/registo', '/recuperacao'].includes(location.pathname)
+  const isAuth = ['/login', '/registo', '/recuperacao', '/recuperar'].includes(location.pathname)
   return (
     <>
       {!isAuth && <Navbar />}
@@ -52,9 +60,38 @@ function AppContent() {
             <Route path="/bolsas/:id" element={<BolsaDetalhe />} />
             <Route path="/mentores" element={<Mentores />} />
             <Route path="/mentores/:id" element={<MentorDetalhe />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/registo" element={<Registo />} />
-            <Route path="/recuperacao" element={<Recuperacao />} />
+            <Route
+              path="/login"
+              element={
+                <GuestOnly>
+                  <Login />
+                </GuestOnly>
+              }
+            />
+            <Route
+              path="/registo"
+              element={
+                <GuestOnly>
+                  <Registo />
+                </GuestOnly>
+              }
+            />
+            <Route
+              path="/recuperacao"
+              element={
+                <GuestOnly>
+                  <Recuperacao />
+                </GuestOnly>
+              }
+            />
+            <Route
+              path="/recuperar"
+              element={
+                <GuestOnly>
+                  <Recuperacao />
+                </GuestOnly>
+              }
+            />
             <Route path="/nao-autorizado" element={<NaoAutorizado />} />
             <Route
               path="/mentorias"
@@ -102,9 +139,11 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <ConfirmProvider>
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
+          <RealtimeProvider>
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </RealtimeProvider>
         </ConfirmProvider>
       </ToastProvider>
     </AuthProvider>

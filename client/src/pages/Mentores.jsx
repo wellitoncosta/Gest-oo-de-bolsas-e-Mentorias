@@ -5,9 +5,13 @@ import { useTranslation } from 'react-i18next'
 import Skeleton from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
 import { UserRound, ArrowUpRight } from 'lucide-react'
+import AreaSelect from '../components/AreaSelect'
+import { conteudo, conteudoTemFallback } from '../services/conteudo'
+import { useTranslation as useI18n } from 'react-i18next'
 
 export default function Mentores() {
   const { t } = useTranslation(['mentoring', 'common'])
+  const { i18n } = useI18n()
   const [mentores, setMentores] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -50,11 +54,24 @@ export default function Mentores() {
                   <h2 className="text-lg font-bold group-hover:text-brand dark:group-hover:text-accent">
                     {m.nome}
                   </h2>
-                  {m.area && <p className="text-sm text-muted">{m.area}</p>}
+                  {m.area && (
+                    <AreaSelect
+                      value={m.area}
+                      disabled
+                      className="appearance-none bg-transparent text-sm text-muted"
+                    />
+                  )}
                 </div>
                 <ArrowUpRight className="ml-auto text-muted" size={18} />
               </div>
-              {m.biografia && <p className="text-sm mt-2 line-clamp-2">{m.biografia}</p>}
+              {m.biografia && (
+                <p className="text-sm mt-2 line-clamp-2">
+                  {conteudo(m, 'biografia', i18n.language)}
+                </p>
+              )}
+              {conteudoTemFallback(m, ['biografia'], i18n.language) && (
+                <p className="mt-1 text-xs text-muted">{t('common:contentFallback')}</p>
+              )}
             </Link>
           ))}
         </div>

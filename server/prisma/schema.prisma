@@ -17,6 +17,7 @@ model User {
   telefone    String?
   area        String?
   biografia   String?
+  biografiaEn String?
   instituicao String?
   fusoHorario String   @default("Africa/Luanda")
   linkReuniao String?
@@ -33,10 +34,14 @@ model User {
 model Bolsa {
   id         String   @id @default(uuid())
   titulo     String
+  tituloEn   String?
   descricao  String
+  descricaoEn String?
   entidade   String
   valor      String?
+  valorEn    String?
   requisitos String?
+  requisitosEn String?
   area       String
   dataLimite DateTime
   status     String   @default("ABERTA")

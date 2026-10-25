@@ -6,6 +6,7 @@ import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
 import { traduzirErro } from '../services/traduzirErro'
+import BackButton from '../components/BackButton'
 
 export default function Recuperacao() {
   const [passo, setPasso] = useState(1),
@@ -158,6 +159,22 @@ export default function Recuperacao() {
           >
             {erro}
           </div>
+        )}
+        {passo <= 3 && (
+          <BackButton
+            to="/login"
+            label={t('common:back')}
+            onClick={() => {
+              if (passo === 3) {
+                setPasso(2)
+                setResetToken('')
+                setErro('')
+                setMsg('')
+              } else if (passo === 2) alterarEmail()
+              else navigate('/login')
+            }}
+            className="mb-3"
+          />
         )}
         {passo === 1 && (
           <form
