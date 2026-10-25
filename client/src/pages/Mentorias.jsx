@@ -45,13 +45,30 @@ export default function Mentorias() {
     if (evento === 'mentoria:estado') toast.success(t('mentoring:statusUpdated'))
   })
 
-  const atualizar = async (id, status) => {
+  const atualizar = async (id, status, reabrirHorario) => {
     try {
-      await api.put(`/mentorias/${id}/estado`, { status })
+      await api.put(`/mentorias/${id}/estado`, {
+        status,
+        ...(reabrirHorario === undefined ? {} : { reabrirHorario }),
+      })
       carregar()
     } catch (e) {
       toast.error(traduzirErro(e))
     }
+  }
+
+  const cancelarMentoria = async (id) => {
+    if (user?.role !== 'MENTOR') return atualizar(id, 'CANCELADA')
+    const escolha = await confirm({
+      title: t('mentoring:cancel'),
+      message: t('mentoring:reopenSlotPrompt'),
+      cancelLabel: t('mentoring:back'),
+      choices: [
+        { value: true, label: t('mentoring:reopenSlot') },
+        { value: false, label: t('mentoring:closeSlot') },
+      ],
+    })
+    if (escolha !== null) await atualizar(id, 'CANCELADA', escolha)
   }
 
   const criarHorario = async (e) => {
@@ -73,9 +90,15 @@ export default function Mentorias() {
   const removerHorario = async (id) => {
     if (!(await confirm({ message: t('mentoring:removeSlotConfirm') }))) return
     try {
-      await api.delete(`/mentorias/disponibilidades/${id}`)
+      const response = await api.delete(`/mentorias/disponibilidades/${id}`)
       carregar()
-      toast.success(t('mentoring:slotRemoved'))
+      toast.success(
+        t(
+          response.data.codigo === 'DISPONIBILIDADE_FECHADA'
+            ? 'mentoring:slotClosed'
+            : 'mentoring:slotRemoved',
+        ),
+      )
     } catch (err) {
       toast.error(traduzirErro(err))
     }
@@ -126,38 +149,56 @@ export default function Mentorias() {
               {t('mentoring:createSlot')}
             </button>
           </form>
-          <div className="space-y-2">
-            {horarios.map((h) => (
-              <div
-                key={h.id}
-                className="animate-fade-in bg-surface p-3 rounded shadow flex justify-between items-center"
-              >
-                <div>
-                  <div className="font-medium">
-                    {formatarDataHora(
-                      h.inicio,
-                      i18n.language,
-                      user?.fusoHorario || fusoDoNavegador(),
-                    )}{' '}
-                    – {formatarHora(h.fim, i18n.language, user?.fusoHorario || fusoDoNavegador())}
-                  </div>
-                  <div className="text-sm text-muted">
-                    {h.status === 'LIVRE'
-                      ? t('mentoring:free')
-                      : t('mentoring:occupied', { name: h.estudanteNome })}
-                  </div>
+          {['ativa', 'historico'].map((grupo) => {
+            const lista = horarios.filter((h) => (grupo === 'ativa' ? h.ativa : !h.ativa))
+            if (!lista.length) return null
+            return (
+              <section key={grupo} className="mb-5">
+                <h3 className="mb-2 font-semibold">
+                  {t(grupo === 'ativa' ? 'mentoring:activeSlots' : 'mentoring:slotHistory')}
+                </h3>
+                <div className="space-y-2">
+                  {lista.map((h) => (
+                    <div
+                      key={h.id}
+                      className="animate-fade-in bg-surface p-3 rounded shadow flex justify-between items-center"
+                    >
+                      <div>
+                        <div className="font-medium">
+                          {formatarDataHora(
+                            h.inicio,
+                            i18n.language,
+                            user?.fusoHorario || fusoDoNavegador(),
+                          )}{' '}
+                          –{' '}
+                          {formatarHora(
+                            h.fim,
+                            i18n.language,
+                            user?.fusoHorario || fusoDoNavegador(),
+                          )}
+                        </div>
+                        <div className="text-sm text-muted">
+                          {h.status === 'LIVRE'
+                            ? t('mentoring:free')
+                            : h.status === 'FECHADO'
+                              ? t('mentoring:slotInactive')
+                              : t('mentoring:occupied', { name: h.estudanteNome })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removerHorario(h.id)}
+                        disabled={!h.ativa}
+                        className={`rounded-lg px-3 py-1 text-sm ${!h.ativa ? 'bg-bg text-muted' : 'bg-danger text-bg'}`}
+                      >
+                        {h.temHistorico ? t('mentoring:closeSlot') : t('common:remove')}
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => removerHorario(h.id)}
-                  disabled={h.status === 'OCUPADO'}
-                  className={`rounded-lg px-3 py-1 text-sm ${h.status === 'OCUPADO' ? 'bg-bg text-muted' : 'bg-danger text-bg'}`}
-                >
-                  {t('common:remove')}
-                </button>
-              </div>
-            ))}
-            {horarios.length === 0 && <EmptyState title={t('mentoring:noSlots')} />}
-          </div>
+              </section>
+            )
+          })}
+          {horarios.length === 0 && <EmptyState title={t('mentoring:noSlots')} />}
         </div>
       )}
 
@@ -220,7 +261,7 @@ export default function Mentorias() {
                       {t('mentoring:decline')}
                     </button>
                     <button
-                      onClick={() => atualizar(m.id, 'CANCELADA')}
+                      onClick={() => cancelarMentoria(m.id)}
                       className="rounded-lg bg-brand px-3 py-1 text-sm text-bg"
                     >
                       {t('mentoring:cancel')}
@@ -236,7 +277,7 @@ export default function Mentorias() {
                       {t('mentoring:complete')}
                     </button>
                     <button
-                      onClick={() => atualizar(m.id, 'CANCELADA')}
+                      onClick={() => cancelarMentoria(m.id)}
                       className="rounded-lg bg-brand px-3 py-1 text-sm text-bg"
                     >
                       {t('mentoring:cancel')}

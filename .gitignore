@@ -4,3 +4,7 @@ node_modules/
 *.db-journal
 dist/
 .DS_Store
+server/backups/
+*.bak
+*.backup*
+server/prisma/dev.db*

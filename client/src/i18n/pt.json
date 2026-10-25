@@ -100,21 +100,51 @@
     "terms": {
       "title": "Termos de uso",
       "sections": [
-        { "title": "1. Sobre a plataforma", "text": "A B&M aproxima estudantes de oportunidades de bolsas e de mentores. Ao utilizar a plataforma, o utilizador compromete-se a fornecer informações verdadeiras e a usar os serviços de forma responsável." },
-        { "title": "2. Contas e segurança", "text": "Cada utilizador é responsável por proteger as credenciais da sua conta e por comunicar qualquer utilização não autorizada. A plataforma pode limitar o acesso em caso de utilização abusiva ou violação destes termos." },
-        { "title": "3. Conteúdo e oportunidades", "text": "As informações sobre bolsas e perfis são disponibilizadas para apoiar a descoberta de oportunidades. Os utilizadores devem confirmar diretamente junto das instituições os requisitos, prazos e condições aplicáveis." },
-        { "title": "4. Utilização responsável", "text": "Não é permitido publicar conteúdo ilegal, enganoso, ofensivo ou que viole direitos de terceiros. A disponibilidade dos serviços pode variar durante operações de manutenção." },
-        { "title": "5. Contacto e alterações", "text": "Estes termos podem ser atualizados para refletir mudanças na plataforma. A versão publicada nesta página é a versão em vigor; para questões, utilize o contacto indicado no rodapé." }
+        {
+          "title": "1. Sobre a plataforma",
+          "text": "A B&M aproxima estudantes de oportunidades de bolsas e de mentores. Ao utilizar a plataforma, o utilizador compromete-se a fornecer informações verdadeiras e a usar os serviços de forma responsável."
+        },
+        {
+          "title": "2. Contas e segurança",
+          "text": "Cada utilizador é responsável por proteger as credenciais da sua conta e por comunicar qualquer utilização não autorizada. A plataforma pode limitar o acesso em caso de utilização abusiva ou violação destes termos."
+        },
+        {
+          "title": "3. Conteúdo e oportunidades",
+          "text": "As informações sobre bolsas e perfis são disponibilizadas para apoiar a descoberta de oportunidades. Os utilizadores devem confirmar diretamente junto das instituições os requisitos, prazos e condições aplicáveis."
+        },
+        {
+          "title": "4. Utilização responsável",
+          "text": "Não é permitido publicar conteúdo ilegal, enganoso, ofensivo ou que viole direitos de terceiros. A disponibilidade dos serviços pode variar durante operações de manutenção."
+        },
+        {
+          "title": "5. Contacto e alterações",
+          "text": "Estes termos podem ser atualizados para refletir mudanças na plataforma. A versão publicada nesta página é a versão em vigor; para questões, utilize o contacto indicado no rodapé."
+        }
       ]
     },
     "privacy": {
       "title": "Política de privacidade",
       "sections": [
-        { "title": "1. Dados tratados", "text": "A plataforma trata os dados fornecidos no registo e no perfil, bem como informações necessárias para gerir candidaturas, disponibilidade e sessões de mentoria." },
-        { "title": "2. Finalidades", "text": "Os dados são utilizados para autenticar contas, apresentar oportunidades, facilitar o contacto entre estudantes e mentores, gerir a plataforma e proteger a segurança dos serviços." },
-        { "title": "3. Acesso e partilha", "text": "Os dados de perfil e candidatura são apresentados aos utilizadores que precisam deles para as funcionalidades solicitadas. Não introduza dados sensíveis desnecessários em campos públicos ou mensagens." },
-        { "title": "4. Conservação e segurança", "text": "São aplicadas medidas razoáveis para proteger os dados e estes são conservados pelo período necessário à prestação dos serviços e ao cumprimento de obrigações aplicáveis." },
-        { "title": "5. Direitos e contacto", "text": "Pode solicitar a atualização ou eliminação da sua conta através das definições disponíveis ou do contacto indicado no rodapé, sem prejuízo de dados que devam ser conservados por obrigação aplicável." }
+        {
+          "title": "1. Dados tratados",
+          "text": "A plataforma trata os dados fornecidos no registo e no perfil, bem como informações necessárias para gerir candidaturas, disponibilidade e sessões de mentoria."
+        },
+        {
+          "title": "2. Finalidades",
+          "text": "Os dados são utilizados para autenticar contas, apresentar oportunidades, facilitar o contacto entre estudantes e mentores, gerir a plataforma e proteger a segurança dos serviços."
+        },
+        {
+          "title": "3. Acesso e partilha",
+          "text": "Os dados de perfil e candidatura são apresentados aos utilizadores que precisam deles para as funcionalidades solicitadas. Não introduza dados sensíveis desnecessários em campos públicos ou mensagens."
+        },
+        {
+          "title": "4. Conservação e segurança",
+          "text": "São aplicadas medidas razoáveis para proteger os dados e estes são conservados pelo período necessário à prestação dos serviços e ao cumprimento de obrigações aplicáveis."
+        },
+        {
+          "title": "5. Direitos e contacto",
+          "text": "Pode solicitar a atualização ou eliminação da sua conta através das definições disponíveis ou do contacto indicado no rodapé, sem prejuízo de dados que devam ser conservados por obrigação aplicável."
+        }
       ]
     }
   },
@@ -221,6 +251,15 @@
     "loginToBook": "Inicie sessão como estudante para agendar.",
     "selectSlot": "Selecione um horário e indique o tema",
     "mySlots": "Meus horários",
+    "activeSlots": "Ativos",
+    "slotHistory": "Histórico",
+    "slotInactive": "Fechado",
+    "reopenSlotPrompt": "Reabrir este horário para novas marcações?",
+    "reopenSlot": "Reabrir",
+    "closeSlot": "Fechar horário",
+    "back": "Voltar",
+    "slotClosed": "Horário fechado.",
+    "slotRemoved": "Horário removido.",
     "createSlot": "Criar horário",
     "free": "Livre",
     "occupied": "Ocupado (estudante: {{name}})",
@@ -354,7 +393,8 @@
     "MENTORIA_NAO_ENCONTRADA": "Mentoria não encontrada.",
     "TRANSICAO_INVALIDA": "Esta alteração de estado não é permitida.",
     "DISPONIBILIDADE_NAO_ENCONTRADA": "Disponibilidade não encontrada.",
-    "HORARIO_OCUPADO": "Não é possível remover um horário com mentoria agendada.",
+    "HORARIO_OCUPADO": "Não é possível fechar um horário com uma mentoria agendada.",
+    "DISPONIBILIDADE_FECHADA": "Horário fechado.",
     "BLOQUEIO_PROPRIA_CONTA": "Não pode bloquear a própria conta.",
     "BLOQUEIO_ADMIN_NAO_PERMITIDO": "Não é possível bloquear outro administrador.",
     "EMAIL_JA_REGISTADO": "Este email já está registado.",

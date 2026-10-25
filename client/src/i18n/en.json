@@ -100,21 +100,51 @@
     "terms": {
       "title": "Terms of use",
       "sections": [
-        { "title": "1. About the platform", "text": "B&M connects students with scholarship opportunities and mentors. By using the platform, users agree to provide accurate information and use the services responsibly." },
-        { "title": "2. Accounts and security", "text": "Each user is responsible for protecting their account credentials and reporting unauthorised use. Access may be limited in cases of abuse or breach of these terms." },
-        { "title": "3. Content and opportunities", "text": "Scholarship and profile information is provided to support opportunity discovery. Users should confirm applicable requirements, deadlines and conditions directly with the institutions." },
-        { "title": "4. Responsible use", "text": "Users may not publish unlawful, misleading or offensive content, or content that infringes third-party rights. Service availability may vary during maintenance." },
-        { "title": "5. Contact and changes", "text": "These terms may be updated to reflect platform changes. The version on this page is the current version; for questions, use the contact details in the footer." }
+        {
+          "title": "1. About the platform",
+          "text": "B&M connects students with scholarship opportunities and mentors. By using the platform, users agree to provide accurate information and use the services responsibly."
+        },
+        {
+          "title": "2. Accounts and security",
+          "text": "Each user is responsible for protecting their account credentials and reporting unauthorised use. Access may be limited in cases of abuse or breach of these terms."
+        },
+        {
+          "title": "3. Content and opportunities",
+          "text": "Scholarship and profile information is provided to support opportunity discovery. Users should confirm applicable requirements, deadlines and conditions directly with the institutions."
+        },
+        {
+          "title": "4. Responsible use",
+          "text": "Users may not publish unlawful, misleading or offensive content, or content that infringes third-party rights. Service availability may vary during maintenance."
+        },
+        {
+          "title": "5. Contact and changes",
+          "text": "These terms may be updated to reflect platform changes. The version on this page is the current version; for questions, use the contact details in the footer."
+        }
       ]
     },
     "privacy": {
       "title": "Privacy policy",
       "sections": [
-        { "title": "1. Data we process", "text": "The platform processes information provided during registration and in profiles, together with information needed to manage applications, availability and mentoring sessions." },
-        { "title": "2. Purposes", "text": "Data is used to authenticate accounts, show opportunities, connect students and mentors, operate the platform and protect service security." },
-        { "title": "3. Access and sharing", "text": "Profile and application data is shown to users who need it for requested features. Do not enter unnecessary sensitive information in public fields or messages." },
-        { "title": "4. Retention and security", "text": "Reasonable measures are used to protect data. Data is retained for as long as needed to provide services and meet applicable obligations." },
-        { "title": "5. Rights and contact", "text": "You may request an update or deletion of your account through the available settings or the contact details in the footer, subject to data that must be retained under applicable obligations." }
+        {
+          "title": "1. Data we process",
+          "text": "The platform processes information provided during registration and in profiles, together with information needed to manage applications, availability and mentoring sessions."
+        },
+        {
+          "title": "2. Purposes",
+          "text": "Data is used to authenticate accounts, show opportunities, connect students and mentors, operate the platform and protect service security."
+        },
+        {
+          "title": "3. Access and sharing",
+          "text": "Profile and application data is shown to users who need it for requested features. Do not enter unnecessary sensitive information in public fields or messages."
+        },
+        {
+          "title": "4. Retention and security",
+          "text": "Reasonable measures are used to protect data. Data is retained for as long as needed to provide services and meet applicable obligations."
+        },
+        {
+          "title": "5. Rights and contact",
+          "text": "You may request an update or deletion of your account through the available settings or the contact details in the footer, subject to data that must be retained under applicable obligations."
+        }
       ]
     }
   },
@@ -221,6 +251,15 @@
     "loginToBook": "Sign in as a student to book a session.",
     "selectSlot": "Select a time and enter a topic",
     "mySlots": "My time slots",
+    "activeSlots": "Active",
+    "slotHistory": "History",
+    "slotInactive": "Closed",
+    "reopenSlotPrompt": "Reopen this time slot for new bookings?",
+    "reopenSlot": "Reopen",
+    "closeSlot": "Close time slot",
+    "back": "Back",
+    "slotClosed": "Time slot closed.",
+    "slotRemoved": "Time slot removed.",
     "createSlot": "Create time slot",
     "free": "Available",
     "occupied": "Booked (student: {{name}})",
@@ -354,7 +393,8 @@
     "MENTORIA_NAO_ENCONTRADA": "Mentoring session not found.",
     "TRANSICAO_INVALIDA": "This status change is not allowed.",
     "DISPONIBILIDADE_NAO_ENCONTRADA": "Availability not found.",
-    "HORARIO_OCUPADO": "A time slot with a booked mentoring session cannot be removed.",
+    "HORARIO_OCUPADO": "A time slot with a booked mentoring session cannot be closed.",
+    "DISPONIBILIDADE_FECHADA": "Time slot closed.",
     "BLOQUEIO_PROPRIA_CONTA": "You cannot block your own account.",
     "BLOQUEIO_ADMIN_NAO_PERMITIDO": "You cannot block another administrator.",
     "EMAIL_JA_REGISTADO": "This email is already registered.",
