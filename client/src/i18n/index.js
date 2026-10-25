@@ -15,6 +15,7 @@ i18n
     resources: {
       pt: {
         ...pt,
+        legal: pt.legal,
         areas: pt.areas,
         home: { ...pt.home, ...homeExtraPt },
         errors: pt.errors,
@@ -25,6 +26,7 @@ i18n
       },
       en: {
         ...en,
+        legal: en.legal,
         areas: en.areas,
         home: { ...en.home, ...homeExtraEn },
         errors: en.errors,
@@ -49,6 +51,8 @@ i18n
       'admin',
       'errors',
       'status',
+      'footer',
+      'legal',
     ],
     defaultNS: 'common',
     detection: { order: ['localStorage'], lookupLocalStorage: 'lang', caches: ['localStorage'] },

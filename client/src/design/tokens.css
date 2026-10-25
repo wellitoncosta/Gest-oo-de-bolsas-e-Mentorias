@@ -9,6 +9,9 @@
     --brand: 21 54 99;
     --accent: 44 185 132;
     --danger: 185 60 73;
+    --footer-bg: 9 27 39;
+    --footer-text: 238 244 249;
+    --footer-muted: 173 190 202;
   }
 
   .dark {
@@ -21,6 +24,9 @@
     --brand: 91 141 239;
     --accent: 52 211 153;
     --danger: 248 113 113;
+    --footer-bg: 9 27 39;
+    --footer-text: 238 244 249;
+    --footer-muted: 173 190 202;
   }
 }
 

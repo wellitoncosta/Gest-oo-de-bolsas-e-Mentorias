@@ -30,11 +30,42 @@ body {
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   input,
   select,
   textarea {
     @apply bg-surface-2 text-text placeholder:text-muted;
   }
+}
+
+.footer-link {
+  position: relative;
+  width: fit-content;
+  transition: color 200ms ease;
+}
+
+.footer-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: '';
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms ease;
+}
+
+.footer-link:hover {
+  color: rgb(var(--footer-text));
+}
+
+.footer-link:hover::after,
+.footer-link:focus-visible::after {
+  transform: scaleX(1);
 }
 
 @layer components {

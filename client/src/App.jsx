@@ -24,6 +24,7 @@ const Registo = lazy(() => import('./pages/Registo'))
 const Recuperacao = lazy(() => import('./pages/Recuperacao'))
 const Admin = lazy(() => import('./pages/Admin'))
 const NaoAutorizado = lazy(() => import('./pages/NaoAutorizado'))
+const LegalPages = lazy(() => import('./pages/LegalPages'))
 
 function RouteFallback() {
   return (
@@ -51,7 +52,7 @@ function AppContent() {
   return (
     <>
       {!isAuth && <Navbar />}
-      <main className={`${isAuth ? '' : 'pt-[72px]'} min-h-screen bg-bg text-text`}>
+      <main className="min-h-screen bg-bg text-text">
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -60,6 +61,8 @@ function AppContent() {
             <Route path="/bolsas/:id" element={<BolsaDetalhe />} />
             <Route path="/mentores" element={<Mentores />} />
             <Route path="/mentores/:id" element={<MentorDetalhe />} />
+            <Route path="/termos" element={<LegalPages type="terms" />} />
+            <Route path="/privacidade" element={<LegalPages type="privacy" />} />
             <Route
               path="/login"
               element={

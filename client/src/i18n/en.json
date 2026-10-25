@@ -35,6 +35,8 @@
     "liveOffline": "Live updates disconnected; syncing periodically",
     "toggleTheme": "Toggle theme",
     "language": "Language",
+    "notifications_one": "{{count}} unread notification",
+    "notifications_other": "{{count}} unread notifications",
     "student": "Student",
     "mentor": "Mentor",
     "admin": "Administrator",
@@ -63,7 +65,58 @@
     "register": "Create account",
     "logout": "Sign out",
     "menu": "Open menu",
-    "profile": "Profile"
+    "profile": "Profile",
+    "mainNavigation": "Main navigation",
+    "closeMenu": "Close menu"
+  },
+  "footer": {
+    "browseTitle": "Explore",
+    "platformTitle": "Platform",
+    "usefulTitle": "Useful links",
+    "location": "Luanda, Angola",
+    "availableIn": "Available in",
+    "language": "Language",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "scholarships": "Scholarships",
+    "mentors": "Mentors",
+    "applications": "Applications",
+    "mentoring": "Mentoring",
+    "account": "My account",
+    "register": "Create account",
+    "terms": "Terms of use",
+    "privacy": "Privacy",
+    "faq": "Frequently asked questions",
+    "contact": "Contact",
+    "callTitle": "Want to know how B&M can support your journey?",
+    "contactCta": "Talk to us",
+    "callText": "We are here to help you find your next step.",
+    "copyright": "© {{year}} B&M. All rights reserved.",
+    "backToTop": "Back to top"
+  },
+  "legal": {
+    "back": "Back to home",
+    "updated": "Updated {{date}}",
+    "terms": {
+      "title": "Terms of use",
+      "sections": [
+        { "title": "1. About the platform", "text": "B&M connects students with scholarship opportunities and mentors. By using the platform, users agree to provide accurate information and use the services responsibly." },
+        { "title": "2. Accounts and security", "text": "Each user is responsible for protecting their account credentials and reporting unauthorised use. Access may be limited in cases of abuse or breach of these terms." },
+        { "title": "3. Content and opportunities", "text": "Scholarship and profile information is provided to support opportunity discovery. Users should confirm applicable requirements, deadlines and conditions directly with the institutions." },
+        { "title": "4. Responsible use", "text": "Users may not publish unlawful, misleading or offensive content, or content that infringes third-party rights. Service availability may vary during maintenance." },
+        { "title": "5. Contact and changes", "text": "These terms may be updated to reflect platform changes. The version on this page is the current version; for questions, use the contact details in the footer." }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "sections": [
+        { "title": "1. Data we process", "text": "The platform processes information provided during registration and in profiles, together with information needed to manage applications, availability and mentoring sessions." },
+        { "title": "2. Purposes", "text": "Data is used to authenticate accounts, show opportunities, connect students and mentors, operate the platform and protect service security." },
+        { "title": "3. Access and sharing", "text": "Profile and application data is shown to users who need it for requested features. Do not enter unnecessary sensitive information in public fields or messages." },
+        { "title": "4. Retention and security", "text": "Reasonable measures are used to protect data. Data is retained for as long as needed to provide services and meet applicable obligations." },
+        { "title": "5. Rights and contact", "text": "You may request an update or deletion of your account through the available settings or the contact details in the footer, subject to data that must be retained under applicable obligations." }
+      ]
+    }
   },
   "home": {
     "eyebrow": "Scholarships and mentoring for your next step",

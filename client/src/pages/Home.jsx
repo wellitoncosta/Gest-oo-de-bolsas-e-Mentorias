@@ -396,7 +396,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-content px-5 py-20">
+      <section id="faq" className="scroll-mt-24 mx-auto max-w-content px-5 py-20">
         <Reveal>
           <h2 className="text-3xl font-semibold">{t('faqTitle')}</h2>
           <div className="mt-7 divide-y divide-border rounded-2xl border border-border bg-surface">
