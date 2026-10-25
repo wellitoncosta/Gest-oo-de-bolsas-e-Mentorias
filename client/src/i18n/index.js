@@ -7,6 +7,8 @@ import homeExtraPt from './home-extra-pt.json'
 import homeExtraEn from './home-extra-en.json'
 import feedbackPt from './feedback-pt.json'
 import feedbackEn from './feedback-en.json'
+import dashboardExtraPt from './dashboard-extra-pt.json'
+import dashboardExtraEn from './dashboard-extra-en.json'
 
 i18n
   .use(LanguageDetector)
@@ -15,6 +17,7 @@ i18n
     resources: {
       pt: {
         ...pt,
+        dashboard: { ...pt.dashboard, ...dashboardExtraPt },
         legal: pt.legal,
         areas: pt.areas,
         home: { ...pt.home, ...homeExtraPt },
@@ -26,6 +29,7 @@ i18n
       },
       en: {
         ...en,
+        dashboard: { ...en.dashboard, ...dashboardExtraEn },
         legal: en.legal,
         areas: en.areas,
         home: { ...en.home, ...homeExtraEn },

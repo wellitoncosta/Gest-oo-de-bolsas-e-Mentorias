@@ -40,6 +40,36 @@ export const autenticar = async (req, res, next) => {
   }
 }
 
+// Optional authentication is used by public pages that can return richer data to signed-in users.
+export const autenticarOpcional = async (req, res, next) => {
+  try {
+    let token = req.cookies?.token
+    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1]
+    }
+    if (!token) {
+      req.user = null
+      return next()
+    }
+    const decoded = verificarToken(token)
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, nome: true, email: true, role: true, bloqueado: true, fusoHorario: true },
+    })
+    req.user = user && !user.bloqueado ? {
+      id: user.id,
+      nome: user.nome,
+      email: user.email,
+      role: user.role,
+      fusoHorario: user.fusoHorario,
+    } : null
+    return next()
+  } catch {
+    req.user = null
+    return next()
+  }
+}
+
 export const autorizar = (...roles) => {
   return (req, res, next) => {
     if (!req.user)

@@ -11,6 +11,7 @@
     "migrate:content": "node prisma/migrar-conteudo.js",
     "verify:utc": "node prisma/verificar-utc.js",
     "test:sse": "node prisma/verificar-sse.js",
+    "verify:dashboard": "node prisma/verificar-dashboard-resumo.js",
     "format": "prettier --write \"src/**/*.js\" \"prisma/*.js\""
   },
   "dependencies": {
