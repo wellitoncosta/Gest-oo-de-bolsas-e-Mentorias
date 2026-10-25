@@ -56,13 +56,16 @@ export const autenticarOpcional = async (req, res, next) => {
       where: { id: decoded.id },
       select: { id: true, nome: true, email: true, role: true, bloqueado: true, fusoHorario: true },
     })
-    req.user = user && !user.bloqueado ? {
-      id: user.id,
-      nome: user.nome,
-      email: user.email,
-      role: user.role,
-      fusoHorario: user.fusoHorario,
-    } : null
+    req.user =
+      user && !user.bloqueado
+        ? {
+            id: user.id,
+            nome: user.nome,
+            email: user.email,
+            role: user.role,
+            fusoHorario: user.fusoHorario,
+          }
+        : null
     return next()
   } catch {
     req.user = null

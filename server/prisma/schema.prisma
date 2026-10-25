@@ -80,6 +80,7 @@ model DisponibilidadeMentor {
   horaFim    String
   inicio     DateTime
   fim        DateTime
+  ativa      Boolean  @default(true)
   createdAt  DateTime @default(now())
 
   mentor    User       @relation(fields: [mentorId], references: [id], onDelete: Cascade)
@@ -103,7 +104,7 @@ model Mentoria {
 
   mentor          User                  @relation("MentorMentorias", fields: [mentorId], references: [id], onDelete: Cascade)
   estudante       User                  @relation("EstudanteMentorias", fields: [estudanteId], references: [id], onDelete: Cascade)
-  disponibilidade DisponibilidadeMentor @relation(fields: [disponibilidadeId], references: [id], onDelete: Cascade)
+  disponibilidade DisponibilidadeMentor @relation(fields: [disponibilidadeId], references: [id], onDelete: NoAction)
   bolsa           Bolsa?                @relation(fields: [bolsaId], references: [id], onDelete: SetNull)
 }
 

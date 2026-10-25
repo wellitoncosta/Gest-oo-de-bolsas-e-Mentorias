@@ -26,12 +26,17 @@ async function loginPerfil(nome) {
 async function verificar(nome, headers = {}, expectedRole) {
   const response = await fetch(`${apiBase}/dashboard/resumo`, { headers })
   const body = await response.json()
-  if (!response.ok) throw new Error(`${nome}: endpoint respondeu HTTP ${response.status}: ${body.mensagem || 'erro'}`)
-  if (expectedRole && body.role !== expectedRole) throw new Error(`${nome}: perfil esperado ${expectedRole}, recebido ${body.role}`)
+  if (!response.ok)
+    throw new Error(
+      `${nome}: endpoint respondeu HTTP ${response.status}: ${body.mensagem || 'erro'}`,
+    )
+  if (expectedRole && body.role !== expectedRole)
+    throw new Error(`${nome}: perfil esperado ${expectedRole}, recebido ${body.role}`)
   const keys = Object.keys(body)
   console.log(`${nome}: ${keys.join(', ')}`)
   for (const [key, value] of Object.entries(body)) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) console.log(`  ${key}: ${Object.keys(value).join(', ')}`)
+    if (value && typeof value === 'object' && !Array.isArray(value))
+      console.log(`  ${key}: ${Object.keys(value).join(', ')}`)
   }
 }
 
@@ -42,10 +47,16 @@ try {
     const headers = await loginPerfil(nome)
     if (!headers) {
       perfisEmFalta += 1
-      console.log(`${nome}: ignorado; defina DASHBOARD_${nome.toUpperCase()}_TOKEN ou as variáveis EMAIL/PASSWORD para testar este perfil.`)
+      console.log(
+        `${nome}: ignorado; defina DASHBOARD_${nome.toUpperCase()}_TOKEN ou as variáveis EMAIL/PASSWORD para testar este perfil.`,
+      )
       continue
     }
-    await verificar(nome, headers, nome === 'admin' ? 'ADMIN' : nome === 'mentor' ? 'MENTOR' : 'ESTUDANTE')
+    await verificar(
+      nome,
+      headers,
+      nome === 'admin' ? 'ADMIN' : nome === 'mentor' ? 'MENTOR' : 'ESTUDANTE',
+    )
   }
   if (perfisEmFalta) console.log(`Faltam credenciais de teste para ${perfisEmFalta} perfil(is).`)
 } catch (error) {

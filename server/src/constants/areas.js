@@ -14,11 +14,13 @@ export function mapearArea(valor) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-  if (/engenhar|engineering/.test(normalizado)) return 'engenharia'
   if (
-    /tecnolog|informat|software|cibersegur|comput|ia\b|dados|technology|computer/.test(normalizado)
+    /tecnolog|informat|software|ciberseg|comput|\bia\b|dados|technology|computer|artificial intelligence|machine learning/.test(
+      normalizado,
+    )
   )
     return 'tecnologia'
+  if (/engenhar|engineering/.test(normalizado)) return 'engenharia'
   if (/saude|medicin|enferm|biolog|farmac|health|nurs/.test(normalizado)) return 'saude'
   if (/educac|ensino|academ|pedagog|formac|education|teaching/.test(normalizado)) return 'educacao'
   if (/gestao|administr|empreend|negocio|econom|management|business/.test(normalizado))

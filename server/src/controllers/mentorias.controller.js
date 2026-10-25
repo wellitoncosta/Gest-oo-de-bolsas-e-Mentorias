@@ -56,6 +56,7 @@ const agendarSchema = z.object({
 
 const estadoSchema = z.object({
   status: z.enum(['PENDENTE', 'CONFIRMADA', 'RECUSADA', 'CANCELADA', 'CONCLUIDA']),
+  reabrirHorario: z.boolean().optional().default(true),
 })
 
 const transicoesPermitidas = {
@@ -105,7 +106,7 @@ export const criarDisponibilidade = async (req, res, next) => {
     if (inicio < new Date())
       return res.status(400).json({ mensagem: 'Horário já passou', codigo: 'HORARIO_PASSADO' })
     const sobrepoe = await prisma.disponibilidadeMentor.findFirst({
-      where: { mentorId: req.user.id, inicio: { lt: fim }, fim: { gt: inicio } },
+      where: { mentorId: req.user.id, ativa: true, inicio: { lt: fim }, fim: { gt: inicio } },
       select: { id: true },
     })
     if (sobrepoe)
@@ -135,7 +136,7 @@ export const criarDisponibilidade = async (req, res, next) => {
 export const listarDisponibilidades = async (req, res, next) => {
   try {
     const { mentorId } = req.query
-    const where = {}
+    const where = { ativa: true }
     if (mentorId) where.mentorId = mentorId
     const disps = await prisma.disponibilidadeMentor.findMany({
       where,
@@ -184,8 +185,10 @@ export const minhasDisponibilidades = async (req, res, next) => {
         horaFim: d.horaFim,
         inicio: d.inicio,
         fim: d.fim,
-        status: ocupada ? 'OCUPADO' : 'LIVRE',
+        status: !d.ativa ? 'FECHADO' : ocupada ? 'OCUPADO' : 'LIVRE',
         estudanteNome: ocupada ? ocupada.estudante.nome : null,
+        ativa: d.ativa,
+        temHistorico: d.mentorias.length > 0,
       }
     })
     res.json(resultado)
@@ -247,6 +250,12 @@ export const agendar = async (req, res, next) => {
         include: { mentorias: true, mentor: true },
       })
       if (!disp)
+        throw {
+          status: 404,
+          message: 'Disponibilidade não encontrada',
+          codigo: 'DISPONIBILIDADE_NAO_ENCONTRADA',
+        }
+      if (!disp.ativa)
         throw {
           status: 404,
           message: 'Disponibilidade não encontrada',
@@ -340,7 +349,7 @@ export const minhasMentorias = async (req, res, next) => {
 
 export const atualizarEstadoMentoria = async (req, res, next) => {
   try {
-    const { status } = estadoSchema.parse(req.body)
+    const { status, reabrirHorario } = estadoSchema.parse(req.body)
     const mentoria = await prisma.mentoria.findUnique({ where: { id: req.params.id } })
     if (!mentoria)
       return res
@@ -382,9 +391,18 @@ export const atualizarEstadoMentoria = async (req, res, next) => {
       })
       dadosAtualizacao.linkReuniao = mentor?.linkReuniao || null
     }
-    const atualizada = await prisma.mentoria.update({
-      where: { id: req.params.id },
-      data: dadosAtualizacao,
+    const atualizada = await prisma.$transaction(async (tx) => {
+      const updated = await tx.mentoria.update({
+        where: { id: req.params.id },
+        data: dadosAtualizacao,
+      })
+      if (role === 'MENTOR' && status === 'CANCELADA') {
+        await tx.disponibilidadeMentor.update({
+          where: { id: mentoria.disponibilidadeId },
+          data: { ativa: reabrirHorario },
+        })
+      }
+      return updated
     })
     const evento = {
       id: atualizada.id,
@@ -433,15 +451,20 @@ export const removerDisponibilidade = async (req, res, next) => {
       })
     if (disp.mentorId !== req.user.id)
       return res.status(403).json({ mensagem: 'Sem permissão', codigo: 'SEM_PERMISSAO' })
-    const ocupado = disp.mentorias.some((m) => m.status === 'PENDENTE' || m.status === 'CONFIRMADA')
-    if (ocupado)
-      return res.status(400).json({
-        mensagem: 'Não pode remover disponibilidade com mentoria agendada',
-        codigo: 'HORARIO_OCUPADO',
+    if (disp.mentorias.length) {
+      await prisma.disponibilidadeMentor.update({
+        where: { id: req.params.id },
+        data: { ativa: false },
       })
-    await prisma.disponibilidadeMentor.delete({ where: { id: req.params.id } })
+    } else {
+      await prisma.disponibilidadeMentor.delete({ where: { id: req.params.id } })
+    }
     emitirTodos('disponibilidade:alterada', { mentorId: disp.mentorId })
-    res.json({ mensagem: 'Disponibilidade removida', codigo: 'DISPONIBILIDADE_REMOVIDA' })
+    res.json(
+      disp.mentorias.length
+        ? { mensagem: 'Disponibilidade fechada', codigo: 'DISPONIBILIDADE_FECHADA' }
+        : { mensagem: 'Disponibilidade removida', codigo: 'DISPONIBILIDADE_REMOVIDA' },
+    )
   } catch (err) {
     next(err)
   }
