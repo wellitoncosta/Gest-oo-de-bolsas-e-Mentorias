@@ -14,7 +14,7 @@ export function ThemeProvider({ children }) {
     document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem('theme', dark ? 'dark' : 'light')
   }, [dark])
-  const toggle = useCallback(() => setDark(value => !value), [])
+  const toggle = useCallback(() => setDark((value) => !value), [])
   const value = useMemo(() => ({ dark, toggle }), [dark, toggle])
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

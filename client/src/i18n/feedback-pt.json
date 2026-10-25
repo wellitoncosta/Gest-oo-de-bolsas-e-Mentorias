@@ -1,0 +1,8 @@
+{
+  "mentoring": {
+    "slotCreated": "Horário criado com sucesso.",
+    "slotRemoved": "Horário removido com sucesso."
+  },
+  "scholarships": { "applicationCancelled": "Candidatura cancelada com sucesso." },
+  "admin": { "scholarshipRemoved": "Bolsa removida com sucesso." }
+}

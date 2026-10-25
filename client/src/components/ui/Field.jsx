@@ -1,3 +1,38 @@
-export function Input({ label, error, className = '', ...props }) { return <label className="block space-y-1.5"><span className="text-sm font-medium text-text">{label}</span><input className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`} {...props} />{error && <span className="text-sm text-danger">{error}</span>}</label> }
-export function Select({ label, error, className = '', children, ...props }) { return <label className="block space-y-1.5"><span className="text-sm font-medium text-text">{label}</span><select className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`} {...props}>{children}</select>{error && <span className="text-sm text-danger">{error}</span>}</label> }
-export function Textarea({ label, error, className = '', ...props }) { return <label className="block space-y-1.5"><span className="text-sm font-medium text-text">{label}</span><textarea className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`} {...props} />{error && <span className="text-sm text-danger">{error}</span>}</label> }
+export function Input({ label, error, className = '', ...props }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-sm font-medium text-text">{label}</span>
+      <input
+        className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`}
+        {...props}
+      />
+      {error && <span className="text-sm text-danger">{error}</span>}
+    </label>
+  )
+}
+export function Select({ label, error, className = '', children, ...props }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-sm font-medium text-text">{label}</span>
+      <select
+        className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`}
+        {...props}
+      >
+        {children}
+      </select>
+      {error && <span className="text-sm text-danger">{error}</span>}
+    </label>
+  )
+}
+export function Textarea({ label, error, className = '', ...props }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-sm font-medium text-text">{label}</span>
+      <textarea
+        className={`w-full rounded-xl border border-border px-3.5 py-2.5 ${error ? 'border-danger' : ''} ${className}`}
+        {...props}
+      />
+      {error && <span className="text-sm text-danger">{error}</span>}
+    </label>
+  )
+}

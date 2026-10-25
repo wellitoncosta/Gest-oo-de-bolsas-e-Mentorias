@@ -1,0 +1,8 @@
+{
+  "mentoring": {
+    "slotCreated": "Time slot created successfully.",
+    "slotRemoved": "Time slot removed successfully."
+  },
+  "scholarships": { "applicationCancelled": "Application cancelled successfully." },
+  "admin": { "scholarshipRemoved": "Scholarship removed successfully." }
+}

@@ -1,3 +1,27 @@
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-export default function Modal({ open, onClose, title, children }) { const { t } = useTranslation('common'); if (!open) return null; return <div className="fixed inset-0 z-[70] grid place-items-center bg-black/50 p-4" onMouseDown={e => e.target === e.currentTarget && onClose?.()}><section role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 text-text shadow-xl"><div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-semibold">{title}</h2><button onClick={onClose} aria-label={t('close')}><X size={20} /></button></div>{children}</section></div> }
+export default function Modal({ open, onClose, title, children }) {
+  const { t } = useTranslation('common')
+  if (!open) return null
+  return (
+    <div
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/50 p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 text-text shadow-xl"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <button onClick={onClose} aria-label={t('close')}>
+            <X size={20} />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  )
+}

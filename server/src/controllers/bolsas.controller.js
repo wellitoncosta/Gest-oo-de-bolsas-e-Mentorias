@@ -36,7 +36,7 @@ export const obter = async (req, res, next) => {
       where: { id: req.params.id },
       include: { _count: { select: { candidaturas: true } } }
     })
-    if (!bolsa) return res.status(404).json({ mensagem: 'Bolsa não encontrada' })
+    if (!bolsa) return res.status(404).json({ mensagem: 'Bolsa não encontrada', codigo: 'BOLSA_NAO_ENCONTRADA' })
     const { _count, ...rest } = bolsa
     res.json({ ...rest, totalCandidaturas: _count.candidaturas })
   } catch (err) { next(err) }
@@ -62,6 +62,6 @@ export const atualizar = async (req, res, next) => {
 export const remover = async (req, res, next) => {
   try {
     await prisma.bolsa.delete({ where: { id: req.params.id } })
-    res.json({ mensagem: 'Bolsa removida' })
+    res.json({ mensagem: 'Bolsa removida', codigo: 'BOLSA_REMOVIDA' })
   } catch (err) { next(err) }
 }

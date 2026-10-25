@@ -1,10 +1,12 @@
 import * as authService from '../services/auth.service.js'
 import { z } from 'zod'
+import { timezoneValido } from '../utils/datas.js'
 
 const registarSchema = z.object({
   nome: z.string().min(2, 'Nome obrigatório'),
   email: z.string().trim().toLowerCase().email('Email inválido'),
   senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  fusoHorario: z.string().refine(timezoneValido, 'Fuso horário inválido').default('Africa/Luanda'),
   role: z.enum(['ESTUDANTE', 'MENTOR']).optional()
 })
 
@@ -46,7 +48,7 @@ export const login = async (req, res, next) => {
 
 export const logout = async (req, res) => {
   res.clearCookie('token')
-  res.json({ mensagem: 'Sessão terminada' })
+  res.json({ mensagem: 'Sessão terminada', codigo: 'SESSAO_TERMINADA' })
 }
 
 export const me = async (req, res) => {

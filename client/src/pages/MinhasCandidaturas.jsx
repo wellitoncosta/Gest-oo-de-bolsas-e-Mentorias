@@ -3,9 +3,16 @@ import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 import { localeFor } from '../i18n'
 import { traduzirErro, traduzirEstado } from '../services/traduzirErro'
+import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
+import Skeleton from '../components/ui/Skeleton'
+import EmptyState from '../components/ui/EmptyState'
+import Badge from '../components/ui/Badge'
 
 export default function MinhasCandidaturas() {
   const { t, i18n } = useTranslation(['scholarships', 'common', 'mentoring'])
+  const toast = useToast()
+  const confirm = useConfirm()
   const [cands, setCands] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -20,39 +27,69 @@ export default function MinhasCandidaturas() {
     }
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => {
+    carregar()
+  }, [])
 
   const cancelar = async (id) => {
-    if (!confirm(t('mentoring:cancelConfirm'))) return
+    if (!(await confirm({ message: t('mentoring:cancelConfirm') }))) return
     try {
       await api.delete(`/candidaturas/${id}`)
       carregar()
+      toast.success(t('scholarships:applicationCancelled'))
     } catch (err) {
-      alert(traduzirErro(err))
+      toast.error(traduzirErro(err))
     }
   }
 
-  const cor = (s) => s === 'APROVADA' ? 'bg-accent/10 text-accent' : s === 'REJEITADA' ? 'bg-danger/10 text-danger' : 'bg-accent/10 text-accent'
-
-  if (loading) return <div className="p-8 text-center">{t('common:loading')}</div>
+  if (loading)
+    return (
+      <div className="mx-auto grid max-w-content gap-4 px-5 py-12">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+    )
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('scholarships:mine')}</h1>
-      {cands.length === 0 ? <p className="text-muted">{t('scholarships:noneMine')}</p> : (
+      {cands.length === 0 ? (
+        <EmptyState title={t('scholarships:noneMine')} />
+      ) : (
         <div className="space-y-3">
-          {cands.map(c => (
+          {cands.map((c) => (
             <div key={c.id} className="bg-surface p-4 rounded shadow">
               <div className="flex justify-between mb-2">
                 <div>
                   <div className="font-bold">{c.bolsa?.titulo}</div>
                   <div className="text-sm text-muted">{c.bolsa?.entidade}</div>
-                  <div className="text-sm text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString(localeFor(i18n.language)) : ''}</div>
+                  <div className="text-sm text-muted">
+                    {c.createdAt
+                      ? new Date(c.createdAt).toLocaleDateString(localeFor(i18n.language))
+                      : ''}
+                  </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full h-fit ${cor(c.status)}`}>{traduzirEstado(c.status)}</span>
+                <Badge
+                  className="h-fit"
+                  tone={
+                    c.status === 'APROVADA'
+                      ? 'success'
+                      : c.status === 'REJEITADA'
+                        ? 'danger'
+                        : 'neutral'
+                  }
+                >
+                  {traduzirEstado(c.status)}
+                </Badge>
               </div>
               {c.status === 'PENDENTE' && (
-                <button onClick={() => cancelar(c.id)} className="rounded-lg bg-brand px-3 py-1 text-sm text-bg">{t('scholarships:cancelApplication')}</button>
+                <button
+                  onClick={() => cancelar(c.id)}
+                  className="rounded-lg bg-brand px-3 py-1 text-sm text-bg"
+                >
+                  {t('scholarships:cancelApplication')}
+                </button>
               )}
             </div>
           ))}

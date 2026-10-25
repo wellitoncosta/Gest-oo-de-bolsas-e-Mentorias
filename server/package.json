@@ -7,7 +7,8 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "seed": "node prisma/seed.js",
-    "normalizar-emails": "node prisma/normalizar-emails.js"
+    "normalizar-emails": "node prisma/normalizar-emails.js",
+    "verify:utc": "node prisma/verificar-utc.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

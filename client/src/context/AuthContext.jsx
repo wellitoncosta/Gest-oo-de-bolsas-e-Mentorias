@@ -47,7 +47,9 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post('/auth/logout')
-    } catch {}
+    } catch {
+      // A local sign-out should still complete when the network is unavailable.
+    }
     setUser(null)
   }
 

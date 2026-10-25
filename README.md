@@ -203,3 +203,11 @@ Mensagens de erro da API devem passar por `traduzirErro(err)` em `client/src/ser
 ### Componentes de interface
 
 Os elementos reutilizáveis ficam em `client/src/components/ui`: `Button`, `Card`, `Badge`, campos `Input`/`Select`/`Textarea`, `Modal`, `Skeleton`, `EmptyState`, `Toast` e `KpiCard`. Importe-os nos ecrãs para manter espaçamento, estados e acessibilidade consistentes.
+
+## Modelo de dados e fusos horários
+
+As disponibilidades guardam `inicio` e `fim` como instantes UTC. Os campos `data`, `horaInicio` e `horaFim` permanecem apenas para compatibilidade e não devem ser usados em novas comparações. `User.fusoHorario` guarda o fuso IANA do utilizador (por omissão `Africa/Luanda`); horários apresentados no cliente são convertidos para esse fuso e devem incluir a abreviatura e a cidade. A base mantém os estados como `String`; candidaturas aceitam `PENDENTE` (submetida) e `EM_ANALISE`, além dos estados de decisão.
+
+`Mentoria` também contém os campos opcionais `bolsaId`, `linkReuniao`, `avaliacao`, `comentarioAvaliacao` e `notaMentor`. `Candidatura` contém `notaInterna` e `pontuacao`. O link de reunião é copiado para a mentoria quando confirmada e só é devolvido aos seus participantes.
+
+Antes de migrar a base existente, faça uma cópia de `server/prisma/dev.db`. Execute `node prisma/migrar-utc.js` dentro de `server/` (ou indique o caminho de outra base SQLite). O script converte as datas legadas interpretando-as em `Africa/Luanda` (UTC+1), pode ser repetido com segurança e apresenta um relatório. Depois sincronize o schema com `npx prisma db push` e gere o cliente com `npx prisma generate`. Para disponibilidades novas, envie `inicio` e `fim` em ISO UTC; os campos legados continuam a ser aceites nas rotas existentes.

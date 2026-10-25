@@ -18,13 +18,15 @@ model User {
   area        String?
   biografia   String?
   instituicao String?
+  fusoHorario String   @default("Africa/Luanda")
+  linkReuniao String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   mentorDisponibilidades DisponibilidadeMentor[]
   candidaturas           Candidatura[]
-  mentoriasComoMentor    Mentoria[]                @relation("MentorMentorias")
-  mentoriasComoEstudante Mentoria[]                @relation("EstudanteMentorias")
+  mentoriasComoMentor    Mentoria[]              @relation("MentorMentorias")
+  mentoriasComoEstudante Mentoria[]              @relation("EstudanteMentorias")
   passwordResets         PasswordReset[]
 }
 
@@ -42,16 +44,19 @@ model Bolsa {
   updatedAt  DateTime @updatedAt
 
   candidaturas Candidatura[]
+  mentorias    Mentoria[]
 }
 
 model Candidatura {
-  id        String   @id @default(uuid())
-  userId    String
-  bolsaId   String
-  mensagem  String?
-  status    String   @default("PENDENTE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String
+  bolsaId     String
+  mensagem    String?
+  notaInterna String?
+  pontuacao   Int?
+  status      String   @default("PENDENTE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   bolsa Bolsa @relation(fields: [bolsaId], references: [id], onDelete: Cascade)
@@ -62,28 +67,39 @@ model Candidatura {
 model DisponibilidadeMentor {
   id         String   @id @default(uuid())
   mentorId   String
+  /// @deprecated Campo legado; usar inicio/fim em UTC.
   data       DateTime
+  /// @deprecated Campo legado; usar inicio/fim em UTC.
   horaInicio String
+  /// @deprecated Campo legado; usar inicio/fim em UTC.
   horaFim    String
+  inicio     DateTime
+  fim        DateTime
   createdAt  DateTime @default(now())
 
-  mentor     User       @relation(fields: [mentorId], references: [id], onDelete: Cascade)
-  mentorias  Mentoria[]
+  mentor    User       @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  mentorias Mentoria[]
 }
 
 model Mentoria {
-  id                String   @id @default(uuid())
-  mentorId          String
-  estudanteId       String
-  disponibilidadeId String
-  tema              String
-  status            String   @default("PENDENTE")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  mentorId            String
+  estudanteId         String
+  disponibilidadeId   String
+  tema                String
+  status              String   @default("PENDENTE")
+  bolsaId             String?
+  linkReuniao         String?
+  avaliacao           Int?
+  comentarioAvaliacao String?
+  notaMentor          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   mentor          User                  @relation("MentorMentorias", fields: [mentorId], references: [id], onDelete: Cascade)
   estudante       User                  @relation("EstudanteMentorias", fields: [estudanteId], references: [id], onDelete: Cascade)
   disponibilidade DisponibilidadeMentor @relation(fields: [disponibilidadeId], references: [id], onDelete: Cascade)
+  bolsa           Bolsa?                @relation(fields: [bolsaId], references: [id], onDelete: SetNull)
 }
 
 model PasswordReset {

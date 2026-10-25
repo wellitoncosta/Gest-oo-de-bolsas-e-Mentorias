@@ -5,10 +5,10 @@ import rateLimit from 'express-rate-limit'
 
 const router = Router()
 const dev = process.env.NODE_ENV !== 'production'
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 1000 : 20, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.' } })
-const limiterPedir = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 5, keyGenerator: (req) => { const email = (req.body?.email || '').toLowerCase(); return req.ip + ':' + email }, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.' } })
-const limiterValidar = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 15, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.' } })
-const limiterRedefinir = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 15, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.' } })
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 1000 : 20, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.', codigo: 'MUITAS_TENTATIVAS' } })
+const limiterPedir = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 5, keyGenerator: (req) => { const email = (req.body?.email || '').toLowerCase(); return req.ip + ':' + email }, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.', codigo: 'MUITAS_TENTATIVAS' } })
+const limiterValidar = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 15, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.', codigo: 'MUITAS_TENTATIVAS' } })
+const limiterRedefinir = rateLimit({ windowMs: 15 * 60 * 1000, max: dev ? 10000 : 15, message: { mensagem: 'Muitas tentativas. Tente novamente mais tarde.', codigo: 'MUITAS_TENTATIVAS' } })
 
 router.post('/registar', limiter, registar)
 router.post('/login', limiter, login)

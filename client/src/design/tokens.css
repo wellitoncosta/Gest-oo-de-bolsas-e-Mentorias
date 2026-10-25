@@ -22,6 +22,31 @@
   }
 }
 
+.hero-pattern {
+  background-image: radial-gradient(rgb(var(--brand) / 0.11) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-float-delayed {
+  animation: float 7s ease-in-out -2s infinite;
+}
+.animate-float-slow {
+  animation: float 8s ease-in-out -4s infinite;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 import { traduzirEstado } from '../services/traduzirErro'
+import Badge from '../components/ui/Badge'
+import EmptyState from '../components/ui/EmptyState'
+import Skeleton from '../components/ui/Skeleton'
 
 export default function Bolsas() {
   const { t } = useTranslation(['scholarships', 'common'])
@@ -26,32 +29,63 @@ export default function Bolsas() {
     }
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => {
+    carregar()
+  }, [])
 
   return (
     <div className="max-w-content mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('scholarships:title')}</h1>
       <div className="flex gap-4 mb-6 flex-wrap">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('common:search')} className="rounded-xl border border-border px-3 py-2" />
-        <input value={area} onChange={(e) => setArea(e.target.value)} placeholder={t('scholarships:searchArea')} className="rounded-xl border border-border px-3 py-2" />
-        <button onClick={carregar} className="rounded-xl bg-brand px-4 py-2 text-bg">{t('common:filter')}</button>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('common:search')}
+          className="rounded-xl border border-border px-3 py-2"
+        />
+        <input
+          value={area}
+          onChange={(e) => setArea(e.target.value)}
+          placeholder={t('scholarships:searchArea')}
+          className="rounded-xl border border-border px-3 py-2"
+        />
+        <button onClick={carregar} className="rounded-xl bg-brand px-4 py-2 text-bg">
+          {t('common:filter')}
+        </button>
       </div>
-      {loading ? <div>{t('common:loading')}</div> : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {bolsas.map(b => (
-            <Link key={b.id} to={`/bolsas/${b.id}`} className="bg-surface p-4 rounded shadow hover:shadow-md">
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2, 3, 4].map((item) => (
+            <Skeleton key={item} className="h-52" />
+          ))}
+        </div>
+      ) : bolsas.length ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {bolsas.map((b) => (
+            <Link
+              key={b.id}
+              to={`/bolsas/${b.id}`}
+              className="group rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            >
               <div className="flex justify-between">
-                <h2 className="font-bold text-lg">{b.titulo}</h2>
-                <span className={`rounded-full px-2 py-1 text-xs ${b.status === 'ABERTA' ? 'bg-accent/10 text-accent' : 'bg-bg text-muted'}`}>{traduzirEstado(b.status)}</span>
+                <h2 className="text-lg font-bold group-hover:text-brand dark:group-hover:text-accent">
+                  {b.titulo}
+                </h2>
+                <Badge tone={b.status === 'ABERTA' ? 'success' : 'neutral'}>
+                  {traduzirEstado(b.status)}
+                </Badge>
               </div>
-              <p className="text-sm text-muted mb-2">{b.entidade} • {b.area}</p>
+              <p className="text-sm text-muted mb-2">
+                {b.entidade} • {b.area}
+              </p>
               <p className="text-sm line-clamp-2">{b.descricao}</p>
               {b.valor && <p className="text-sm mt-2 font-medium">{b.valor}</p>}
             </Link>
           ))}
         </div>
+      ) : (
+        <EmptyState title={t('scholarships:none')} />
       )}
-      {bolsas.length === 0 && !loading && <p className="text-muted">{t('scholarships:none')}</p>}
     </div>
   )
 }

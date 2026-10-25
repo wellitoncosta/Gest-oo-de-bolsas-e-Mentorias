@@ -3,6 +3,18 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+function disponibilidadeEmDias(dias, horaInicio, horaFim) {
+  const agora = new Date()
+  const partes = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Luanda', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(agora).map(({ type, value }) => [type, value]))
+  const dataAlvo = new Date(Date.UTC(Number(partes.year), Number(partes.month) - 1, Number(partes.day) + dias))
+  const data = `${dataAlvo.getUTCFullYear()}-${String(dataAlvo.getUTCMonth() + 1).padStart(2, '0')}-${String(dataAlvo.getUTCDate()).padStart(2, '0')}`
+  const inicio = new Date(`${data}T${horaInicio}:00+01:00`)
+  const fim = new Date(`${data}T${horaFim}:00+01:00`)
+  return { data: new Date(`${data}T00:00:00.000Z`), horaInicio, horaFim, inicio, fim }
+}
+
 async function main() {
   // Limpar
   await prisma.mentoria.deleteMany()
@@ -49,12 +61,9 @@ async function main() {
   }
 
   // Disponibilidades
-  const hoje = new Date()
-  const amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1)
-  const depois = new Date(hoje); depois.setDate(hoje.getDate()+2)
-  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor1.id, data: amanha, horaInicio: '14:00', horaFim: '15:00' } })
-  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor1.id, data: depois, horaInicio: '10:00', horaFim: '11:00' } })
-  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor2.id, data: amanha, horaInicio: '16:00', horaFim: '17:00' } })
+  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor1.id, ...disponibilidadeEmDias(2, '14:00', '15:00') } })
+  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor1.id, ...disponibilidadeEmDias(6, '10:00', '11:00') } })
+  await prisma.disponibilidadeMentor.create({ data: { mentorId: mentor2.id, ...disponibilidadeEmDias(10, '16:00', '17:00') } })
 
   console.log('Seed concluído!')
   console.log('Admin: admin@demo.com / Admin123!')
