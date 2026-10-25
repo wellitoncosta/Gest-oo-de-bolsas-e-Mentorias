@@ -14,7 +14,8 @@ const loginSchema = z.object({
 })
 
 const pedirSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido') })
-const resetSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), codigo: z.string().trim().regex(/^\d{6}$/, 'O código deve ter 6 dígitos'), novaSenha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres') })
+const validarCodigoSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), codigo: z.string().trim().regex(/^\d{6}$/, 'O código deve ter 6 dígitos') })
+const redefinirSchema = z.object({ email: z.string().trim().toLowerCase().email('Email inválido'), resetToken: z.string().min(1, 'Token inválido'), novaSenha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres') })
 
 const setCookie = (res, token) => {
   res.cookie('token', token, {
@@ -56,14 +57,22 @@ export const pedirRecuperacao = async (req, res, next) => {
   try {
     const { email } = pedirSchema.parse(req.body)
     const r = await authService.pedirRecuperacao(email)
-    res.json(r)
+    res.status(200).json(r)
   } catch (err) { next(err) }
 }
 
-export const verificarRecuperacao = async (req, res, next) => {
+export const validarCodigo = async (req, res, next) => {
   try {
-    const { email, codigo, novaSenha } = resetSchema.parse(req.body)
-    const r = await authService.verificarRecuperacao(email, codigo, novaSenha)
-    res.json(r)
+    const { email, codigo } = validarCodigoSchema.parse(req.body)
+    const r = await authService.validarCodigo(email, codigo)
+    res.status(200).json(r)
+  } catch (err) { next(err) }
+}
+
+export const redefinirSenha = async (req, res, next) => {
+  try {
+    const { email, resetToken, novaSenha } = redefinirSchema.parse(req.body)
+    const r = await authService.redefinirSenha(email, resetToken, novaSenha)
+    res.status(200).json(r)
   } catch (err) { next(err) }
 }

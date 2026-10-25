@@ -2,99 +2,22 @@ import { useEffect, useState } from 'react'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { traduzirEstado } from '../services/traduzirErro'
 
-const cores = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-
+const colors = ['rgb(var(--brand))', 'rgb(var(--accent))', 'rgb(var(--muted))', 'rgb(var(--danger))']
 export default function Dashboard() {
   const { user } = useAuth()
-  const [stats, setStats] = useState(null)
-  const [minha, setMinha] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const carregar = async () => {
-      try {
-        const res = await api.get('/dashboard/estatisticas')
-        setStats(res.data)
-        if (user) {
-          const m = await api.get('/dashboard/minha-area')
-          setMinha(m.data)
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    carregar()
-  }, [user])
-
-  if (loading) return <div className="p-8 text-center">A carregar...</div>
-
-  const candidaturasData = stats?.candidaturasPorEstado?.map((c, i) => ({ name: c.status, value: c._count.status, fill: cores[i % cores.length] })) || []
-  const bolsasAreaData = stats?.bolsasPorArea?.map((b, i) => ({ name: b.area, total: b._count.area, fill: cores[i % cores.length] })) || []
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded shadow"><div className="text-sm text-gray-500">Bolsas abertas</div><div className="text-2xl font-bold">{stats?.bolsasAbertas || 0}</div></div>
-        <div className="bg-white p-4 rounded shadow"><div className="text-sm text-gray-500">Mentores</div><div className="text-2xl font-bold">{stats?.totalMentores || 0}</div></div>
-        <div className="bg-white p-4 rounded shadow"><div className="text-sm text-gray-500">Mentorias agendadas</div><div className="text-2xl font-bold">{stats?.mentoriasAgendadas || 0}</div></div>
-        <div className="bg-white p-4 rounded shadow"><div className="text-sm text-gray-500">Candidaturas</div><div className="text-2xl font-bold">{candidaturasData.reduce((a,b)=>a+b.value,0)}</div></div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="font-bold mb-4">Bolsas por área</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={bolsasAreaData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="total" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="font-bold mb-4">Candidaturas por estado</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie data={candidaturasData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                {candidaturasData.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {user && minha && (
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="font-bold mb-4">Minha área</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <div className="flex justify-between mb-2">
-                <h3 className="font-semibold">As minhas candidaturas</h3>
-                {user.role === 'ESTUDANTE' && <a href="/candidaturas" className="text-blue-600 text-sm">Ver todas</a>}
-              </div>
-              {minha.candidaturas.length === 0 ? <p className="text-gray-500">Sem candidaturas</p> : (
-                <ul className="space-y-2">
-                  {minha.candidaturas.slice(0,5).map(c => <li key={c.id} className="border p-2 rounded"><div className="font-medium">{c.bolsa.titulo}</div><div className="text-sm text-gray-500">{c.status}</div></li>)}
-                </ul>
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">As minhas mentorias</h3>
-              {minha.mentorias.length === 0 ? <p className="text-gray-500">Sem mentorias</p> : (
-                <ul className="space-y-2">
-                  {minha.mentorias.slice(0,5).map(m => <li key={m.id} className="border p-2 rounded"><div className="font-medium">{m.tema}</div><div className="text-sm text-gray-500">{m.status}</div></li>)}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+  const { t, i18n } = useTranslation(['dashboard', 'common'])
+  const [stats, setStats] = useState(null), [minha, setMinha] = useState(null), [loading, setLoading] = useState(true)
+  useEffect(() => { const load = async () => { try { const res = await api.get('/dashboard/estatisticas'); setStats(res.data); if (user) { const personal = await api.get('/dashboard/minha-area'); setMinha(personal.data) } } catch (err) { console.error(err) } finally { setLoading(false) } }; load() }, [user])
+  if (loading) return <div className="p-8 text-center">{t('common:loading')}</div>
+  const applications = stats?.candidaturasPorEstado?.map((item, i) => ({ name: traduzirEstado(item.status), value: item._count.status, fill: colors[i % colors.length] })) || []
+  const byArea = stats?.bolsasPorArea?.map(item => ({ name: item.area, total: item._count.area })) || []
+  const kpis = [[t('dashboard:openScholarships'), stats?.bolsasAbertas || 0], [t('dashboard:mentors'), stats?.totalMentores || 0], [t('dashboard:scheduled'), stats?.mentoriasAgendadas || 0], [t('dashboard:applications'), applications.reduce((sum, item) => sum + item.value, 0)]]
+  return <div className="mx-auto max-w-content px-5 py-10"><h1 className="mb-7 text-3xl font-semibold">{t('nav:dashboard')}</h1>
+    <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{kpis.map(([label, value]) => <div key={label} className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><p className="text-sm text-muted">{label}</p><p className="mt-2 text-3xl font-semibold">{new Intl.NumberFormat(i18n.language?.startsWith('en') ? 'en-GB' : 'pt-PT').format(value)}</p></div>)}</div>
+    <div className="mb-8 grid gap-5 lg:grid-cols-2"><section className="rounded-2xl border border-border bg-surface p-5"><h2 className="mb-4 text-lg font-semibold">{t('dashboard:byArea')}</h2><ResponsiveContainer width="100%" height={250}><BarChart data={byArea}><XAxis dataKey="name" stroke="rgb(var(--muted))" /><YAxis stroke="rgb(var(--muted))" /><Tooltip /><Bar dataKey="total" fill="rgb(var(--brand))" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></section><section className="rounded-2xl border border-border bg-surface p-5"><h2 className="mb-4 text-lg font-semibold">{t('dashboard:byStatus')}</h2><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={applications} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>{applications.map((item, i) => <Cell key={i} fill={item.fill} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></section></div>
+    {user && minha && <section className="rounded-2xl border border-border bg-surface p-5"><h2 className="mb-5 text-xl font-semibold">{t('dashboard:myArea')}</h2><div className="grid gap-6 md:grid-cols-2"><div><div className="mb-3 flex justify-between"><h3 className="font-semibold">{t('dashboard:myApplications')}</h3>{user.role === 'ESTUDANTE' && <a href="/candidaturas" className="text-sm text-brand">{t('dashboard:viewAll')}</a>}</div>{minha.candidaturas.length ? <ul className="space-y-2">{minha.candidaturas.slice(0, 5).map(c => <li key={c.id} className="rounded-xl border border-border p-3"><div className="font-medium">{c.bolsa.titulo}</div><div className="text-sm text-muted">{traduzirEstado(c.status)}</div></li>)}</ul> : <p className="text-sm text-muted">{t('dashboard:noneApplications')}</p>}</div><div><h3 className="mb-3 font-semibold">{t('dashboard:myMentoring')}</h3>{minha.mentorias.length ? <ul className="space-y-2">{minha.mentorias.slice(0, 5).map(m => <li key={m.id} className="rounded-xl border border-border p-3"><div className="font-medium">{m.tema}</div><div className="text-sm text-muted">{traduzirEstado(m.status)}</div></li>)}</ul> : <p className="text-sm text-muted">{t('dashboard:noneMentoring')}</p>}</div></div></section>}
+  </div>
 }

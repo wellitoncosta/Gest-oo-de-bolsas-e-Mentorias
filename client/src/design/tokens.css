@@ -1,0 +1,48 @@
+@layer base {
+  :root {
+    --bg: 246 248 251;
+    --surface: 255 255 255;
+    --border: 225 231 239;
+    --text: 15 23 42;
+    --muted: 100 116 139;
+    --brand: 21 54 99;
+    --accent: 44 185 132;
+    --danger: 185 60 73;
+  }
+
+  .dark {
+    --bg: 7 21 30;
+    --surface: 13 43 54;
+    --border: 27 58 69;
+    --text: 232 239 250;
+    --muted: 148 163 184;
+    --brand: 91 141 239;
+    --accent: 52 211 153;
+    --danger: 248 113 113;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

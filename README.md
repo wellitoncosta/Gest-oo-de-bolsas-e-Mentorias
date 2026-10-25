@@ -127,8 +127,9 @@ Após executar o seed:
 - `POST /login` - Login (emails normalizados trim+lowercase, 403 CONTA_BLOQUEADA se bloqueado)
 - `POST /logout` - Logout
 - `GET /me` - Utilizador atual (403 CONTA_BLOQUEADA se bloqueado)
-- `POST /recuperacao/pedir` - Pedir código de recuperação (crypto.randomInt, resposta genérica; bloqueados não recebem; limite 5/15min por IP+email, mais permissivo em dev)
-- `POST /recuperacao/verificar` - Verificar código (apenas dígitos) e alterar senha (bloqueados rejeitados). Devolve tentativas restantes em caso de código errado. Limite 15/15min em produção, mais permissivo em dev. Em caso de ZodError devolve a primeira mensagem de validação.
+- `POST /recuperacao/pedir` - Pedir código (404 se não existe, 403 se bloqueado, 429 cooldown 60s, 502 se falhar SMTP). Responde `{ mensagem: 'Código enviado para o seu email.', segundosReenvio: 60 }`
+- `POST /recuperacao/validar-codigo` - Validar código (5 tentativas, devolve `resetToken` válido 10 min)
+- `POST /recuperacao/redefinir` - Redefinir senha com `resetToken` (invalida todos os resets do utilizador)
 
 ### Bolsas (`/api/bolsas`)
 - `GET /` - Listar (com filtros search, area, status)
@@ -182,3 +183,23 @@ Após executar o seed:
 - **Frontend**: React, Vite, Tailwind CSS, React Router, Axios, Recharts
 - **Backend**: Node.js, Express, Zod, JWT, bcryptjs, Nodemailer, express-rate-limit
 - **Base de dados**: SQLite, Prisma ORM
+
+## Guia visual do cliente
+
+### Tokens de design
+
+O cliente usa as variáveis RGB de `client/src/design/tokens.css`, com valores para os temas claro e escuro. O Tailwind mapeia-as em `client/tailwind.config.js`; use classes como `bg-bg`, `bg-surface`, `border-border`, `text-text`, `text-muted`, `bg-brand` e `text-accent` em vez de cores fixas. O modo escuro é ativado pela classe `dark` no elemento raiz.
+
+### Tema
+
+`ThemeProvider` expõe `{ dark, toggle }` através de `useTheme()`. O tema escolhido fica em `localStorage` na chave `theme`; na primeira visita, a aplicação consulta a preferência do sistema. O script no `client/index.html` aplica o tema antes de o React iniciar para evitar um flash.
+
+### Traduções
+
+As traduções estão em `client/src/i18n/pt.json` e `client/src/i18n/en.json`, organizadas pelos namespaces `common`, `nav`, `auth`, `home`, `dashboard`, `scholarships`, `mentoring`, `account`, `admin`, `errors` e `status`. Para acrescentar texto, adicione a mesma chave nos dois ficheiros e use `useTranslation('namespace')` no componente. A língua selecionada fica em `localStorage` na chave `lang` e também atualiza `html.lang`. Para formatar datas, use `localeFor(i18n.language)` de `client/src/i18n` com as APIs `Intl`.
+
+Mensagens de erro da API devem passar por `traduzirErro(err)` em `client/src/services/traduzirErro.js`: códigos conhecidos usam `errors.<codigo>` e, quando não há tradução, a mensagem do servidor é mantida. Para estados da API, use `traduzirEstado(estado)`.
+
+### Componentes de interface
+
+Os elementos reutilizáveis ficam em `client/src/components/ui`: `Button`, `Card`, `Badge`, campos `Input`/`Select`/`Textarea`, `Modal`, `Skeleton`, `EmptyState`, `Toast` e `KpiCard`. Importe-os nos ecrãs para manter espaçamento, estados e acessibilidade consistentes.

@@ -16,13 +16,16 @@ import Registo from './pages/Registo'
 import Recuperacao from './pages/Recuperacao'
 import Admin from './pages/Admin'
 import NaoAutorizado from './pages/NaoAutorizado'
+import { useLocation } from 'react-router-dom'
+import Footer from './components/Footer'
 
-function App() {
+function AppContent() {
+  const location = useLocation()
+  const isAuth = ['/login', '/registo', '/recuperacao'].includes(location.pathname)
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Navbar />
-        <main className="pt-16 min-h-screen bg-gray-50">
+    <>
+        {!isAuth && <Navbar />}
+        <main className={`${isAuth ? '' : 'pt-[72px]'} min-h-screen bg-bg text-text`}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -41,9 +44,9 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
-      </BrowserRouter>
-    </AuthProvider>
+        {!isAuth && <Footer />}
+    </>
   )
 }
 
-export default App
+export default function App() { return <AuthProvider><BrowserRouter><AppContent /></BrowserRouter></AuthProvider> }

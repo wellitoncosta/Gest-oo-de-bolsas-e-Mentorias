@@ -33,30 +33,42 @@ export const login = async (email, senha) => {
   return { user: safe, token }
 }
 
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex')
+
 export const pedirRecuperacao = async (email) => {
   const emailNorm = (email || '').trim().toLowerCase()
   const user = await prisma.user.findUnique({ where: { email: emailNorm } })
-  if (!user || user.bloqueado) {
-    // Resposta genérica
-    return { mensagem: 'Se o email existir, será enviado um código de recuperação.' }
+  if (!user) throw { status: 404, message: 'Não existe nenhuma conta com este email.' }
+  if (user.bloqueado) throw { status: 403, message: 'Esta conta está bloqueada. Contacte o administrador.' }
+  const ultimo = await prisma.passwordReset.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' }
+  })
+  if (ultimo && (Date.now() - ultimo.createdAt.getTime()) < 60000) {
+    const segundosRestantes = Math.ceil((60000 - (Date.now() - ultimo.createdAt.getTime())) / 1000)
+    throw { status: 429, message: `Aguarde ${segundosRestantes} segundos para pedir novo código.`, segundosRestantes }
   }
-  // Invalidar códigos anteriores
   await prisma.passwordReset.updateMany({ where: { userId: user.id, used: false }, data: { used: true } })
   const codigo = String(crypto.randomInt(100000, 1000000))
   const codeHash = await bcrypt.hash(codigo, 10)
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
   await prisma.passwordReset.create({ data: { userId: user.id, codeHash, expiresAt } })
-  await enviarEmail(emailNorm, 'Recuperação de senha - Gestão de Bolsas e Mentorias', `<p>O seu código de recuperação é: <strong>${codigo}</strong></p><p>Válido por 15 minutos.</p>`, codigo)
-  return { mensagem: 'Se o email existir, será enviado um código de recuperação.' }
+  try {
+    await enviarEmail(emailNorm, 'Recuperação de senha - Gestão de Bolsas e Mentorias', `<p>O seu código de recuperação é: <strong>${codigo}</strong></p><p>Válido por 15 minutos.</p>`, codigo)
+  } catch (e) {
+    throw { status: 502, message: 'Não foi possível enviar o email. Tente novamente.' }
+  }
+  return { mensagem: 'Código enviado para o seu email.', segundosReenvio: 60 }
 }
 
-export const verificarRecuperacao = async (email, codigo, novaSenha) => {
+export const validarCodigo = async (email, codigo) => {
   const emailNorm = (email || '').trim().toLowerCase()
   const codigoLimpo = (codigo || '').trim()
   const user = await prisma.user.findUnique({ where: { email: emailNorm } })
-  if (!user || user.bloqueado) throw { status: 400, message: 'Código inválido' }
+  if (!user) throw { status: 404, message: 'Não existe nenhuma conta com este email.' }
+  if (user.bloqueado) throw { status: 403, message: 'Esta conta está bloqueada. Contacte o administrador.' }
   const reset = await prisma.passwordReset.findFirst({
-    where: { userId: user.id, used: false, expiresAt: { gt: new Date() } },
+    where: { userId: user.id, used: false, verificado: false, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   })
   if (!reset) throw { status: 400, message: 'Código inválido ou expirado' }
@@ -68,8 +80,26 @@ export const verificarRecuperacao = async (email, codigo, novaSenha) => {
     const restantes = Math.max(0, 5 - novos)
     throw { status: 400, message: `Código inválido. Restam ${restantes} tentativas` }
   }
+  const resetToken = crypto.randomBytes(32).toString('hex')
+  const tokenHash = sha256(resetToken)
+  const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
+  await prisma.passwordReset.update({ where: { id: reset.id }, data: { verificado: true, tokenHash, tokenExpiresAt } })
+  return { resetToken, mensagem: 'Código validado.' }
+}
+
+export const redefinirSenha = async (email, resetToken, novaSenha) => {
+  const emailNorm = (email || '').trim().toLowerCase()
+  const user = await prisma.user.findUnique({ where: { email: emailNorm } })
+  if (!user) throw { status: 400, message: 'Sessão de recuperação inválida ou expirada. Peça um novo código.' }
+  if (!resetToken) throw { status: 400, message: 'Sessão de recuperação inválida ou expirada. Peça um novo código.' }
+  const tokenHash = sha256(resetToken)
+  const reset = await prisma.passwordReset.findFirst({
+    where: { userId: user.id, used: false, verificado: true, tokenHash, tokenExpiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' }
+  })
+  if (!reset) throw { status: 400, message: 'Sessão de recuperação inválida ou expirada. Peça um novo código.' }
   const hash = await bcrypt.hash(novaSenha, 10)
   await prisma.user.update({ where: { id: user.id }, data: { senha: hash } })
-  await prisma.passwordReset.update({ where: { id: reset.id }, data: { used: true } })
+  await prisma.passwordReset.updateMany({ where: { userId: user.id }, data: { used: true } })
   return { mensagem: 'Senha alterada com sucesso' }
 }

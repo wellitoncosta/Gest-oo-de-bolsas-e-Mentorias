@@ -1,10 +1,30 @@
 import nodemailer from 'nodemailer'
 import 'dotenv/config'
 
-export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM, NODE_ENV } = process.env
+const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM, NODE_ENV } = process.env
 
-  if (!SMTP_USER || !SMTP_PASS) {
+let transporter = null
+
+const criarTransporter = () => {
+  if (transporter) return transporter
+  if (!SMTP_USER || !SMTP_PASS) return null
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT) || 465,
+    secure: Number(SMTP_PORT) === 465,
+    pool: true,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  })
+  return transporter
+}
+
+export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
+  const t = criarTransporter()
+
+  if (!t) {
     if (NODE_ENV !== 'production') {
       console.log('\n=== EMAIL (DEV - SMTP não configurado) ===')
       if (codigoDebug) console.log('CÓDIGO:', codigoDebug)
@@ -16,14 +36,7 @@ export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT) || 465,
-      secure: Number(SMTP_PORT) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS }
-    })
-
-    await transporter.sendMail({
+    await t.sendMail({
       from: MAIL_FROM || SMTP_USER,
       to: para,
       subject: assunto,
@@ -37,7 +50,8 @@ export const enviarEmail = async (para, assunto, html, codigoDebug = null) => {
       if (codigoDebug) console.log('CÓDIGO:', codigoDebug)
       console.log('Para:', para)
       console.log('=====================================\n')
+      return { enviado: false, dev: true, erro: err.message }
     }
-    return { enviado: false, erro: err.message }
+    throw err
   }
 }

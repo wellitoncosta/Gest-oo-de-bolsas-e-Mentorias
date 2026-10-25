@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import api from '../services/api'
+import { useTranslation } from 'react-i18next'
+import { localeFor } from '../i18n'
+import { traduzirErro, traduzirEstado } from '../services/traduzirErro'
 
 function BolsasAdmin() {
+  const { t } = useTranslation(['admin', 'common'])
   const [bolsas, setBolsas] = useState([])
   const [form, setForm] = useState({ titulo: '', descricao: '', entidade: '', valor: '', requisitos: '', area: '', dataLimite: '', status: 'ABERTA' })
   const [editando, setEditando] = useState(null)
@@ -31,35 +35,35 @@ function BolsasAdmin() {
   }
 
   const remover = async (id) => {
-    if (!confirm('Remover bolsa?')) return
+    if (!confirm(t('admin:removeConfirm'))) return
     await api.delete(`/bolsas/${id}`)
     carregar()
   }
 
   return (
     <div>
-      <h2 className="font-bold text-xl mb-4">Gestão de Bolsas</h2>
-      <form onSubmit={criar} className="bg-white p-4 rounded shadow mb-6 grid md:grid-cols-2 gap-3">
-        <input placeholder="Título" value={form.titulo} onChange={(e) => setForm({...form, titulo: e.target.value})} className="border rounded px-3 py-2" required />
-        <input placeholder="Entidade" value={form.entidade} onChange={(e) => setForm({...form, entidade: e.target.value})} className="border rounded px-3 py-2" required />
-        <input placeholder="Área" value={form.area} onChange={(e) => setForm({...form, area: e.target.value})} className="border rounded px-3 py-2" required />
-        <input placeholder="Valor" value={form.valor} onChange={(e) => setForm({...form, valor: e.target.value})} className="border rounded px-3 py-2" />
+      <h2 className="font-bold text-xl mb-4">{t('admin:scholarshipManagement')}</h2>
+      <form onSubmit={criar} className="bg-surface p-4 rounded shadow mb-6 grid md:grid-cols-2 gap-3">
+        <input placeholder={t('common:title')} value={form.titulo} onChange={(e) => setForm({...form, titulo: e.target.value})} className="rounded-xl border border-border px-3 py-2" required />
+        <input placeholder={t('common:organization')} value={form.entidade} onChange={(e) => setForm({...form, entidade: e.target.value})} className="rounded-xl border border-border px-3 py-2" required />
+        <input placeholder={t('common:area')} value={form.area} onChange={(e) => setForm({...form, area: e.target.value})} className="rounded-xl border border-border px-3 py-2" required />
+        <input placeholder={t('common:amount')} value={form.valor} onChange={(e) => setForm({...form, valor: e.target.value})} className="rounded-xl border border-border px-3 py-2" />
         <input type="date" value={form.dataLimite} onChange={(e) => setForm({...form, dataLimite: e.target.value})} className="border rounded px-3 py-2" required />
         <select value={form.status} onChange={(e) => setForm({...form, status: e.target.value})} className="border rounded px-3 py-2">
-          <option value="ABERTA">Aberta</option>
-          <option value="FECHADA">Fechada</option>
+          <option value="ABERTA">{t('status:ABERTA')}</option>
+          <option value="FECHADA">{t('status:FECHADA')}</option>
         </select>
-        <textarea placeholder="Descrição" value={form.descricao} onChange={(e) => setForm({...form, descricao: e.target_value || e.target.value})} className="border rounded px-3 py-2 md:col-span-2" rows={2}></textarea>
-        <textarea placeholder="Requisitos" value={form.requisitos} onChange={(e) => setForm({...form, requisitos: e.target.value})} className="border rounded px-3 py-2 md:col-span-2" rows={2}></textarea>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded md:col-span-2">{editando ? 'Atualizar' : 'Criar'}</button>
+        <textarea placeholder={t('common:description')} value={form.descricao} onChange={(e) => setForm({...form, descricao: e.target_value || e.target.value})} className="rounded-xl border border-border px-3 py-2 md:col-span-2" rows={2}></textarea>
+        <textarea placeholder={t('common:requirements')} value={form.requisitos} onChange={(e) => setForm({...form, requisitos: e.target.value})} className="rounded-xl border border-border px-3 py-2 md:col-span-2" rows={2}></textarea>
+        <button className="rounded-xl bg-brand px-4 py-2 text-bg md:col-span-2">{editando ? t('admin:update') : t('admin:create')}</button>
       </form>
       <div className="space-y-2">
         {bolsas.map(b => (
-          <div key={b.id} className="bg-white p-3 rounded shadow flex justify-between items-center">
-            <div><div className="font-medium">{b.titulo}</div><div className="text-sm text-gray-500">{b.entidade} • {b.status}</div></div>
+          <div key={b.id} className="bg-surface p-3 rounded shadow flex justify-between items-center">
+            <div><div className="font-medium">{b.titulo}</div><div className="text-sm text-muted">{b.entidade} • {traduzirEstado(b.status)}</div></div>
             <div className="flex gap-2">
-              <button onClick={() => editar(b)} className="px-3 py-1 bg-gray-200 rounded text-sm">Editar</button>
-              <button onClick={() => remover(b.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Remover</button>
+              <button onClick={() => editar(b)} className="rounded-lg bg-bg px-3 py-1 text-sm">{t('admin:edit')}</button>
+              <button onClick={() => remover(b.id)} className="rounded-lg bg-danger px-3 py-1 text-sm text-bg">{t('common:remove')}</button>
             </div>
           </div>
         ))}
@@ -69,6 +73,7 @@ function BolsasAdmin() {
 }
 
 function UtilizadoresAdmin() {
+  const { t } = useTranslation(['admin', 'common'])
   const [users, setUsers] = useState([])
   const [erro, setErro] = useState('')
   const carregar = async () => {
@@ -79,27 +84,27 @@ function UtilizadoresAdmin() {
   const alterar = async (u) => {
     setErro('')
     if (u.role === 'ADMIN') return
-    if (!confirm(u.bloqueado ? 'Desbloquear utilizador?' : 'Bloquear utilizador?')) return
+    if (!confirm(u.bloqueado ? t('admin:unblockConfirm') : t('admin:blockConfirm'))) return
     try {
       const res = await api.put(`/utilizadores/${u.id}/bloqueio`, { bloqueado: !u.bloqueado })
       setUsers(users.map(x => x.id === u.id ? res.data : x))
     } catch (err) {
-      setErro(err.response?.data?.mensagem || 'Erro')
+      setErro(traduzirErro(err))
     }
   }
   return (
     <div>
-      <h2 className="font-bold text-xl mb-4">Utilizadores</h2>
-      {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
+      <h2 className="font-bold text-xl mb-4">{t('admin:users')}</h2>
+      {erro && <div className="mb-3 p-3 bg-danger/10 text-danger rounded">{erro}</div>}
       <div className="space-y-2">
         {users.map(u => (
-          <div key={u.id} className="bg-white p-3 rounded shadow flex justify-between items-center">
+          <div key={u.id} className="bg-surface p-3 rounded shadow flex justify-between items-center">
             <div>
               <div className="font-medium">{u.nome}</div>
-              <div className="text-sm text-gray-500">{u.email} • {u.role} • <span className={u.bloqueado ? 'text-red-600' : 'text-green-600'}>{u.bloqueado ? 'Bloqueado' : 'Ativo'}</span></div>
+              <div className="text-sm text-muted">{u.email} • {t(u.role === 'ADMIN' ? 'common:admin' : u.role === 'MENTOR' ? 'common:mentor' : 'common:student')} • <span className={u.bloqueado ? 'text-danger' : 'text-accent'}>{u.bloqueado ? t('admin:blocked') : t('admin:active')}</span></div>
             </div>
             {u.role !== 'ADMIN' ? (
-              <button onClick={() => alterar(u)} className={`px-3 py-1 rounded text-sm ${u.bloqueado ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>{u.bloqueado ? 'Desbloquear' : 'Bloquear'}</button>
+              <button onClick={() => alterar(u)} className={`rounded-lg px-3 py-1 text-sm text-bg ${u.bloqueado ? 'bg-accent' : 'bg-danger'}`}>{u.bloqueado ? t('admin:unblock') : t('admin:block')}</button>
             ) : null}
           </div>
         ))}
@@ -109,6 +114,7 @@ function UtilizadoresAdmin() {
 }
 
 function CandidaturasAdmin() {
+  const { t, i18n } = useTranslation(['admin', 'common', 'status'])
   const [cands, setCands] = useState([])
   const [filtro, setFiltro] = useState('TODAS')
   const [pesquisa, setPesquisa] = useState('')
@@ -123,13 +129,13 @@ function CandidaturasAdmin() {
     setErro(''); setMsg('')
     try {
       await api.put(`/candidaturas/${id}/estado`, { status })
-      setMsg(status === 'APROVADA' ? 'Candidatura aprovada' : status === 'REJEITADA' ? 'Candidatura rejeitada' : 'Candidatura revertida para pendente')
+      setMsg(status === 'APROVADA' ? t('admin:approvedMsg') : status === 'REJEITADA' ? t('admin:rejectedMsg') : t('admin:revertedMsg'))
       carregar()
     } catch (err) {
-      setErro(err.response?.data?.mensagem || 'Erro ao atualizar candidatura')
+      setErro(traduzirErro(err, t('common:error')))
     }
   }
-  const cor = (s) => s === 'APROVADA' ? 'bg-green-100 text-green-700' : s === 'REJEITADA' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+  const cor = (s) => s === 'APROVADA' ? 'bg-accent/10 text-accent' : s === 'REJEITADA' ? 'bg-danger/10 text-danger' : 'bg-accent/10 text-accent'
   const filtradas = cands.filter(c => {
     if (filtro !== 'TODAS' && c.status !== filtro) return false
     if (pesquisa) {
@@ -140,40 +146,40 @@ function CandidaturasAdmin() {
   })
   return (
     <div>
-      <h2 className="font-bold text-xl mb-4">Candidaturas</h2>
-      {msg && <div className="mb-3 p-3 bg-green-100 text-green-700 rounded">{msg}</div>}
-      {erro && <div className="mb-3 p-3 bg-red-100 text-red-700 rounded">{erro}</div>}
+      <h2 className="font-bold text-xl mb-4">{t('admin:applications')}</h2>
+      {msg && <div className="mb-3 p-3 bg-accent/10 text-accent rounded">{msg}</div>}
+      {erro && <div className="mb-3 p-3 bg-danger/10 text-danger rounded">{erro}</div>}
       <div className="flex gap-3 mb-4 flex-wrap">
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="border rounded px-3 py-2">
-          <option value="TODAS">Todas</option>
-          <option value="PENDENTE">Pendentes</option>
-          <option value="APROVADA">Aprovadas</option>
-          <option value="REJEITADA">Rejeitadas</option>
+          <option value="TODAS">{t('admin:all')}</option>
+          <option value="PENDENTE">{t('admin:pending')}</option>
+          <option value="APROVADA">{t('admin:approved')}</option>
+          <option value="REJEITADA">{t('admin:rejected')}</option>
         </select>
-        <input value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} placeholder="Pesquisar por bolsa ou candidato" className="border rounded px-3 py-2" />
+        <input value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} placeholder={t('admin:search')} className="rounded-xl border border-border px-3 py-2" />
       </div>
       <div className="space-y-2">
         {filtradas.map(c => (
-          <div key={c.id} className="bg-white p-3 rounded shadow">
+          <div key={c.id} className="bg-surface p-3 rounded shadow">
             <div className="flex justify-between mb-2">
               <div>
                 <div className="font-medium">{c.user?.nome} ({c.user?.email}) - {c.bolsa?.titulo}</div>
-                <div className="text-sm text-gray-500">{c.createdAt ? new Date(c.createdAt).toLocaleString('pt-PT') : ''}</div>
-                <span className={`text-xs px-2 py-1 rounded ${cor(c.status)}`}>{c.status}</span>
+                <div className="text-sm text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString(localeFor(i18n.language)) : ''}</div>
+                <span className={`text-xs px-2 py-1 rounded-full ${cor(c.status)}`}>{traduzirEstado(c.status)}</span>
               </div>
               <div className="flex gap-2">
                 {c.status === 'PENDENTE' && (
                   <>
-                    <button onClick={() => atualizar(c.id, 'APROVADA')} className="px-3 py-1 bg-green-600 text-white rounded text-sm">Aprovar</button>
-                    <button onClick={() => atualizar(c.id, 'REJEITADA')} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Rejeitar</button>
+                    <button onClick={() => atualizar(c.id, 'APROVADA')} className="rounded-lg bg-accent px-3 py-1 text-sm text-bg">{t('admin:approve')}</button>
+                    <button onClick={() => atualizar(c.id, 'REJEITADA')} className="rounded-lg bg-danger px-3 py-1 text-sm text-bg">{t('admin:reject')}</button>
                   </>
                 )}
                 {c.status !== 'PENDENTE' && (
-                  <button onClick={() => atualizar(c.id, 'PENDENTE')} className="px-3 py-1 bg-yellow-600 text-white rounded text-sm">Reverter para pendente</button>
+                  <button onClick={() => atualizar(c.id, 'PENDENTE')} className="rounded-lg bg-accent px-3 py-1 text-sm text-bg">{t('admin:revert')}</button>
                 )}
               </div>
             </div>
-            {c.mensagem && <p className="text-sm text-gray-600 whitespace-pre-wrap">{c.mensagem}</p>}
+            {c.mensagem && <p className="text-sm text-muted whitespace-pre-wrap">{c.mensagem}</p>}
           </div>
         ))}
       </div>
@@ -182,6 +188,7 @@ function CandidaturasAdmin() {
 }
 
 function MentoriasAdmin() {
+  const { t } = useTranslation(['admin', 'common'])
   const [mentorias, setMentorias] = useState([])
   const carregar = async () => {
     const res = await api.get('/mentorias')
@@ -190,12 +197,12 @@ function MentoriasAdmin() {
   useEffect(() => { carregar() }, [])
   return (
     <div>
-      <h2 className="font-bold text-xl mb-4">Mentorias</h2>
+      <h2 className="font-bold text-xl mb-4">{t('admin:mentoring')}</h2>
       <div className="space-y-2">
         {mentorias.map(m => (
-          <div key={m.id} className="bg-white p-3 rounded shadow">
+          <div key={m.id} className="bg-surface p-3 rounded shadow">
             <div className="font-medium">{m.tema}</div>
-            <div className="text-sm text-gray-500">Mentor: {m.mentor.nome} • Estudante: {m.estudante.nome} • {m.status}</div>
+            <div className="text-sm text-muted">{t('admin:mentorStudent', { mentor: m.mentor.nome, student: m.estudante.nome })} • {traduzirEstado(m.status)}</div>
           </div>
         ))}
       </div>
@@ -204,14 +211,15 @@ function MentoriasAdmin() {
 }
 
 export default function Admin() {
+  const { t } = useTranslation(['admin', 'nav'])
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Administração</h1>
+    <div className="max-w-content mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">{t('admin:title')}</h1>
       <div className="flex gap-4 mb-6 flex-wrap">
-        <Link to="/admin" className="px-4 py-2 bg-blue-600 text-white rounded">Bolsas</Link>
-        <Link to="/admin/utilizadores" className="px-4 py-2 bg-gray-200 rounded">Utilizadores</Link>
-        <Link to="/admin/candidaturas" className="px-4 py-2 bg-gray-200 rounded">Candidaturas</Link>
-        <Link to="/admin/mentorias" className="px-4 py-2 bg-gray-200 rounded">Mentorias</Link>
+        <Link to="/admin" className="rounded-xl bg-brand px-4 py-2 text-bg">{t('nav:scholarships')}</Link>
+        <Link to="/admin/utilizadores" className="rounded-xl bg-bg px-4 py-2">{t('admin:users')}</Link>
+        <Link to="/admin/candidaturas" className="rounded-xl bg-bg px-4 py-2">{t('admin:applications')}</Link>
+        <Link to="/admin/mentorias" className="rounded-xl bg-bg px-4 py-2">{t('admin:mentoring')}</Link>
       </div>
       <Routes>
         <Route path="/" element={<BolsasAdmin />} />
