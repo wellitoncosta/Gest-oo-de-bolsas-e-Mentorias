@@ -1,6 +1,8 @@
 import prisma from '../config/db.js'
 import { z } from 'zod'
 import { camposLegados, paraInstanteUTC } from '../utils/datas.js'
+import { disponibilidadeTemColunaAtiva } from '../utils/esquema.js'
+import { randomUUID } from 'node:crypto'
 import {
   emitirPara,
   emitirParaRole,
@@ -58,6 +60,10 @@ const estadoSchema = z.object({
   status: z.enum(['PENDENTE', 'CONFIRMADA', 'RECUSADA', 'CANCELADA', 'CONCLUIDA']),
   reabrirHorario: z.boolean().optional().default(true),
 })
+const avaliacaoSchema = z.object({
+  avaliacao: z.number().int().min(1).max(5),
+  comentarioAvaliacao: z.string().max(1000).optional().nullable(),
+})
 
 const transicoesPermitidas = {
   MENTOR: {
@@ -105,8 +111,14 @@ export const criarDisponibilidade = async (req, res, next) => {
       })
     if (inicio < new Date())
       return res.status(400).json({ mensagem: 'Horário já passou', codigo: 'HORARIO_PASSADO' })
+    const temColunaAtiva = await disponibilidadeTemColunaAtiva()
     const sobrepoe = await prisma.disponibilidadeMentor.findFirst({
-      where: { mentorId: req.user.id, ativa: true, inicio: { lt: fim }, fim: { gt: inicio } },
+      where: {
+        mentorId: req.user.id,
+        ...(temColunaAtiva ? { ativa: true } : {}),
+        inicio: { lt: fim },
+        fim: { gt: inicio },
+      },
       select: { id: true },
     })
     if (sobrepoe)
@@ -116,16 +128,35 @@ export const criarDisponibilidade = async (req, res, next) => {
       })
     const inicioLegado = camposLegados(inicio)
     const fimLegado = camposLegados(fim)
-    const disp = await prisma.disponibilidadeMentor.create({
-      data: {
-        mentorId: req.user.id,
-        inicio,
-        fim,
-        data: inicioLegado.data,
-        horaInicio: inicioLegado.hora,
-        horaFim: fimLegado.hora,
-      },
-    })
+    const campos = {
+      mentorId: req.user.id,
+      inicio,
+      fim,
+      data: inicioLegado.data,
+      horaInicio: inicioLegado.hora,
+      horaFim: fimLegado.hora,
+    }
+    const disp = temColunaAtiva
+      ? await prisma.disponibilidadeMentor.create({
+          data: {
+            ...campos,
+          },
+          select: {
+            id: true,
+            mentorId: true,
+            data: true,
+            horaInicio: true,
+            horaFim: true,
+            inicio: true,
+            fim: true,
+            ...(temColunaAtiva ? { ativa: true } : {}),
+          },
+        })
+      : await (async () => {
+          const id = randomUUID()
+          await prisma.$executeRaw`INSERT INTO "DisponibilidadeMentor" ("id", "mentorId", "inicio", "fim", "data", "horaInicio", "horaFim") VALUES (${id}, ${req.user.id}, ${inicio}, ${fim}, ${inicioLegado.data}, ${inicioLegado.hora}, ${fimLegado.hora})`
+          return { id, ...campos }
+        })()
     emitirTodos('disponibilidade:alterada', { mentorId: req.user.id })
     res.status(201).json(disp)
   } catch (err) {
@@ -136,13 +167,21 @@ export const criarDisponibilidade = async (req, res, next) => {
 export const listarDisponibilidades = async (req, res, next) => {
   try {
     const { mentorId } = req.query
-    const where = { ativa: true }
+    const temColunaAtiva = await disponibilidadeTemColunaAtiva()
+    const where = temColunaAtiva ? { ativa: true } : {}
     if (mentorId) where.mentorId = mentorId
     const disps = await prisma.disponibilidadeMentor.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        mentorId: true,
+        data: true,
+        horaInicio: true,
+        horaFim: true,
+        inicio: true,
+        fim: true,
         mentor: { select: { id: true, nome: true, area: true, bloqueado: true } },
-        mentorias: true,
+        mentorias: { select: { status: true } },
       },
       orderBy: { inicio: 'asc' },
     })
@@ -171,9 +210,21 @@ export const listarDisponibilidades = async (req, res, next) => {
 
 export const minhasDisponibilidades = async (req, res, next) => {
   try {
+    const temColunaAtiva = await disponibilidadeTemColunaAtiva()
     const disps = await prisma.disponibilidadeMentor.findMany({
       where: { mentorId: req.user.id },
-      include: { mentorias: { include: { estudante: { select: { nome: true } } } } },
+      select: {
+        id: true,
+        data: true,
+        horaInicio: true,
+        horaFim: true,
+        inicio: true,
+        fim: true,
+        ...(temColunaAtiva ? { ativa: true } : {}),
+        mentorias: {
+          select: { status: true, tema: true, estudante: { select: { nome: true } } },
+        },
+      },
       orderBy: { inicio: 'asc' },
     })
     const resultado = disps.map((d) => {
@@ -185,9 +236,11 @@ export const minhasDisponibilidades = async (req, res, next) => {
         horaFim: d.horaFim,
         inicio: d.inicio,
         fim: d.fim,
-        status: !d.ativa ? 'FECHADO' : ocupada ? 'OCUPADO' : 'LIVRE',
+        status: temColunaAtiva && !d.ativa ? 'FECHADO' : ocupada ? 'OCUPADO' : 'LIVRE',
         estudanteNome: ocupada ? ocupada.estudante.nome : null,
-        ativa: d.ativa,
+        tema: ocupada?.tema || null,
+        statusMentoria: ocupada?.status || null,
+        ativa: temColunaAtiva ? d.ativa : true,
         temHistorico: d.mentorias.length > 0,
       }
     })
@@ -199,11 +252,74 @@ export const minhasDisponibilidades = async (req, res, next) => {
 
 export const listarMentores = async (req, res, next) => {
   try {
-    const mentores = await prisma.user.findMany({
-      where: { role: 'MENTOR', bloqueado: false },
-      select: { id: true, nome: true, area: true, biografia: true, biografiaEn: true },
+    const [mentores, sessoes, avaliacoes] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: 'MENTOR', bloqueado: false },
+        select: { id: true, nome: true, area: true, biografia: true, biografiaEn: true },
+      }),
+      prisma.mentoria.findMany({
+        where: { status: 'CONCLUIDA' },
+        select: { mentorId: true, avaliacao: true },
+      }),
+      prisma.mentoria.findMany({
+        where: { status: 'CONCLUIDA', avaliacao: { not: null } },
+        select: { mentorId: true, avaliacao: true },
+      }),
+    ])
+    const stats = new Map()
+    for (const mentor of mentores)
+      stats.set(mentor.id, { totalSessoes: 0, totalAvaliacoes: 0, somaAvaliacoes: 0 })
+    for (const sessao of sessoes)
+      if (stats.has(sessao.mentorId)) stats.get(sessao.mentorId).totalSessoes += 1
+    for (const item of avaliacoes)
+      if (stats.has(item.mentorId)) {
+        const stat = stats.get(item.mentorId)
+        stat.totalAvaliacoes += 1
+        stat.somaAvaliacoes += item.avaliacao
+      }
+    res.json(
+      mentores.map((mentor) => {
+        const stat = stats.get(mentor.id)
+        return {
+          ...mentor,
+          totalSessoes: stat.totalSessoes,
+          totalAvaliacoes: stat.totalAvaliacoes,
+          avaliacaoMedia: stat.totalAvaliacoes ? stat.somaAvaliacoes / stat.totalAvaliacoes : null,
+        }
+      }),
+    )
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const avaliarMentoria = async (req, res, next) => {
+  try {
+    const dados = avaliacaoSchema.parse(req.body)
+    const mentoria = await prisma.mentoria.findUnique({ where: { id: req.params.id } })
+    if (!mentoria)
+      return res
+        .status(404)
+        .json({ mensagem: 'Mentoria não encontrada', codigo: 'MENTORIA_NAO_ENCONTRADA' })
+    if (mentoria.estudanteId !== req.user.id)
+      return res.status(403).json({ mensagem: 'Sem permissão', codigo: 'SEM_PERMISSAO' })
+    if (mentoria.status !== 'CONCLUIDA')
+      return res.status(400).json({
+        mensagem: 'Só é possível avaliar uma sessão concluída.',
+        codigo: 'MENTORIA_NAO_CONCLUIDA',
+      })
+    const atualizada = await prisma.mentoria.update({ where: { id: mentoria.id }, data: dados })
+    emitirPara(mentoria.mentorId, 'mentoria:avaliada', {
+      id: mentoria.id,
+      mentorId: mentoria.mentorId,
+      avaliacao: dados.avaliacao,
     })
-    res.json(mentores)
+    emitirEstatisticasAlteradas()
+    res.json({
+      id: atualizada.id,
+      avaliacao: atualizada.avaliacao,
+      comentarioAvaliacao: atualizada.comentarioAvaliacao,
+    })
   } catch (err) {
     next(err)
   }
@@ -242,12 +358,20 @@ export const obterMentor = async (req, res, next) => {
 export const agendar = async (req, res, next) => {
   try {
     const { disponibilidadeId, tema, bolsaId } = agendarSchema.parse(req.body)
+    const temColunaAtiva = await disponibilidadeTemColunaAtiva()
     const resultado = await prisma.$transaction(async (tx) => {
       // Claim the SQLite write lock before checking occupancy so simultaneous bookings serialize.
       await tx.$executeRaw`UPDATE "DisponibilidadeMentor" SET "inicio" = "inicio" WHERE "id" = ${disponibilidadeId}`
       const disp = await tx.disponibilidadeMentor.findUnique({
         where: { id: disponibilidadeId },
-        include: { mentorias: true, mentor: true },
+        select: {
+          id: true,
+          mentorId: true,
+          inicio: true,
+          ...(temColunaAtiva ? { ativa: true } : {}),
+          mentorias: { select: { status: true } },
+          mentor: { select: { bloqueado: true } },
+        },
       })
       if (!disp)
         throw {
@@ -255,7 +379,7 @@ export const agendar = async (req, res, next) => {
           message: 'Disponibilidade não encontrada',
           codigo: 'DISPONIBILIDADE_NAO_ENCONTRADA',
         }
-      if (!disp.ativa)
+      if (temColunaAtiva && !disp.ativa)
         throw {
           status: 404,
           message: 'Disponibilidade não encontrada',
@@ -336,7 +460,17 @@ export const minhasMentorias = async (req, res, next) => {
       include: {
         mentor: { select: { id: true, nome: true } },
         estudante: { select: { id: true, nome: true } },
-        disponibilidade: true,
+        disponibilidade: {
+          select: {
+            id: true,
+            mentorId: true,
+            data: true,
+            horaInicio: true,
+            horaFim: true,
+            inicio: true,
+            fim: true,
+          },
+        },
         bolsa: { select: { id: true, titulo: true, tituloEn: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -383,6 +517,13 @@ export const atualizarEstadoMentoria = async (req, res, next) => {
     } else {
       return res.status(403).json({ mensagem: 'Sem permissão', codigo: 'SEM_PERMISSAO' })
     }
+    const temColunaAtiva =
+      role === 'MENTOR' && status === 'CANCELADA' ? await disponibilidadeTemColunaAtiva() : false
+    if (role === 'MENTOR' && status === 'CANCELADA' && !temColunaAtiva && !reabrirHorario)
+      return res.status(503).json({
+        mensagem: 'Atualize a base de dados para poder fechar este horário.',
+        codigo: 'BASE_REQUER_MIGRACAO',
+      })
     const dadosAtualizacao = { status }
     if (status === 'CONFIRMADA') {
       const mentor = await prisma.user.findUnique({
@@ -396,7 +537,7 @@ export const atualizarEstadoMentoria = async (req, res, next) => {
         where: { id: req.params.id },
         data: dadosAtualizacao,
       })
-      if (role === 'MENTOR' && status === 'CANCELADA') {
+      if (role === 'MENTOR' && status === 'CANCELADA' && temColunaAtiva) {
         await tx.disponibilidadeMentor.update({
           where: { id: mentoria.disponibilidadeId },
           data: { ativa: reabrirHorario },
@@ -428,7 +569,17 @@ export const listarTodasMentorias = async (req, res, next) => {
       include: {
         mentor: { select: { id: true, nome: true } },
         estudante: { select: { id: true, nome: true } },
-        disponibilidade: true,
+        disponibilidade: {
+          select: {
+            id: true,
+            mentorId: true,
+            data: true,
+            horaInicio: true,
+            horaFim: true,
+            inicio: true,
+            fim: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -440,9 +591,14 @@ export const listarTodasMentorias = async (req, res, next) => {
 
 export const removerDisponibilidade = async (req, res, next) => {
   try {
+    const temColunaAtiva = await disponibilidadeTemColunaAtiva()
     const disp = await prisma.disponibilidadeMentor.findUnique({
       where: { id: req.params.id },
-      include: { mentorias: true },
+      select: {
+        id: true,
+        mentorId: true,
+        mentorias: { select: { status: true } },
+      },
     })
     if (!disp)
       return res.status(404).json({
@@ -451,7 +607,20 @@ export const removerDisponibilidade = async (req, res, next) => {
       })
     if (disp.mentorId !== req.user.id)
       return res.status(403).json({ mensagem: 'Sem permissão', codigo: 'SEM_PERMISSAO' })
+    const temSessaoAtiva = disp.mentorias.some(
+      (mentoria) => mentoria.status === 'PENDENTE' || mentoria.status === 'CONFIRMADA',
+    )
+    if (temSessaoAtiva)
+      return res.status(400).json({
+        mensagem: 'Cancele a sessão antes de fechar o horário.',
+        codigo: 'HORARIO_OCUPADO',
+      })
     if (disp.mentorias.length) {
+      if (!temColunaAtiva)
+        return res.status(503).json({
+          mensagem: 'Atualize a base de dados para fechar um horário com histórico.',
+          codigo: 'BASE_REQUER_MIGRACAO',
+        })
       await prisma.disponibilidadeMentor.update({
         where: { id: req.params.id },
         data: { ativa: false },

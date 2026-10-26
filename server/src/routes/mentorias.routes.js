@@ -7,6 +7,7 @@ import {
   agendar,
   minhasMentorias,
   atualizarEstadoMentoria,
+  avaliarMentoria,
   listarTodasMentorias,
   removerDisponibilidade,
   minhasDisponibilidades,
@@ -23,6 +24,7 @@ router.delete('/disponibilidades/:id', autenticar, autorizar('MENTOR'), removerD
 router.post('/agendar', autenticar, autorizar('ESTUDANTE'), agendar)
 router.get('/minhas', autenticar, minhasMentorias)
 router.put('/:id/estado', autenticar, atualizarEstadoMentoria)
+router.put('/:id/avaliacao', autenticar, autorizar('ESTUDANTE'), avaliarMentoria)
 router.get('/', autenticar, autorizar('ADMIN'), listarTodasMentorias)
 
 export default router

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 const serverRoot = dirname(dirname(fileURLToPath(import.meta.url)))
 const testDir = await mkdtemp(join(tmpdir(), 'bm-horarios-verification-'))
 const testDb = join(testDir, 'verification.db')
+const testSchema = join(testDir, 'schema.prisma')
 const testUrl = `file:${encodeURI(testDb.replaceAll('\\', '/'))}`
 let httpServer
 let prisma
@@ -18,10 +19,18 @@ try {
   process.env.NODE_ENV = 'test'
   process.env.CLIENT_URL = 'http://localhost:5173'
   await writeFile(testDb, new Uint8Array())
+  await copyFile(join(serverRoot, 'prisma', 'schema.prisma'), testSchema)
   execFileSync(
     process.execPath,
-    ['node_modules/prisma/build/index.js', 'db', 'push', '--schema', 'prisma/schema.prisma'],
-    { cwd: serverRoot, env: process.env, stdio: 'inherit' },
+    [
+      join(serverRoot, 'node_modules', 'prisma', 'build', 'index.js'),
+      'db',
+      'push',
+      '--skip-generate',
+      '--schema',
+      testSchema,
+    ],
+    { cwd: testDir, env: process.env, stdio: 'inherit' },
   )
   execFileSync(process.execPath, ['prisma/seed.js'], {
     cwd: serverRoot,
@@ -170,6 +179,72 @@ try {
     true,
   )
   console.log('OK: cancelar com reabrirHorario=true volta a publicar o horário.')
+
+  const occupiedSlot = await createSlot(mentor, 6)
+  const occupiedSession = await book(student, occupiedSlot)
+  const confirmedSession = await request(`/mentorias/${occupiedSession.id}/estado`, {
+    method: 'PUT',
+    token: mentor,
+    body: { status: 'CONFIRMADA' },
+  })
+  assert.equal(confirmedSession.status, 200)
+  const closeOccupied = await request(`/mentorias/disponibilidades/${occupiedSlot.id}`, {
+    method: 'DELETE',
+    token: mentor,
+  })
+  assert.equal(closeOccupied.status, 400)
+  assert.deepEqual(closeOccupied.data, {
+    mensagem: 'Cancele a sessão antes de fechar o horário.',
+    codigo: 'HORARIO_OCUPADO',
+  })
+  const stillActive = await prisma.disponibilidadeMentor.findUnique({
+    where: { id: occupiedSlot.id },
+    select: { ativa: true },
+  })
+  assert.equal(stillActive.ativa, true)
+  console.log('OK: fechar horário com sessão CONFIRMADA responde 400 e não altera o horário.')
+
+  const cancelConfirmed = await request(`/mentorias/${occupiedSession.id}/estado`, {
+    method: 'PUT',
+    token: mentor,
+    body: { status: 'CANCELADA' },
+  })
+  assert.equal(cancelConfirmed.status, 200)
+  const closeAfterCancel = await request(`/mentorias/disponibilidades/${occupiedSlot.id}`, {
+    method: 'DELETE',
+    token: mentor,
+  })
+  assert.equal(closeAfterCancel.status, 200)
+  assert.equal(closeAfterCancel.data.codigo, 'DISPONIBILIDADE_FECHADA')
+  const closedAfterCancel = await prisma.disponibilidadeMentor.findUnique({
+    where: { id: occupiedSlot.id },
+    select: { ativa: true },
+  })
+  assert.equal(closedAfterCancel.ativa, false)
+  console.log('OK: depois de cancelar a sessão, fechar o horário funciona.')
+
+  const flowSlot = await createSlot(secondMentor, 12)
+  const flowSession = await book(secondStudent, flowSlot)
+  const accepted = await request(`/mentorias/${flowSession.id}/estado`, {
+    method: 'PUT',
+    token: secondMentor,
+    body: { status: 'CONFIRMADA' },
+  })
+  assert.equal(accepted.status, 200, `aceitação: ${JSON.stringify(accepted.data)}`)
+  const completed = await request(`/mentorias/${flowSession.id}/estado`, {
+    method: 'PUT',
+    token: secondMentor,
+    body: { status: 'CONCLUIDA' },
+  })
+  assert.equal(completed.status, 200, `conclusão: ${JSON.stringify(completed.data)}`)
+  const rated = await request(`/mentorias/${flowSession.id}/avaliacao`, {
+    method: 'PUT',
+    token: secondStudent,
+    body: { avaliacao: 5, comentarioAvaliacao: 'Excelente sessão.' },
+  })
+  assert.equal(rated.status, 200, `avaliação: ${JSON.stringify(rated.data)}`)
+  assert.equal(rated.data.avaliacao, 5)
+  console.log('OK: fluxo de agendamento, aceitação, conclusão e avaliação.')
 
   const mentorHistorySlot = await createSlot(mentor, 6)
   await book(student, mentorHistorySlot)

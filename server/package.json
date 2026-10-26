@@ -13,6 +13,7 @@
     "test:sse": "node prisma/verificar-sse.js",
     "verify:dashboard": "node prisma/verificar-dashboard-resumo.js",
     "verify:horarios": "node prisma/verificar-horarios.js",
+    "verify:legacy-slot": "node prisma/verify-legacy-slot-create.js",
     "db:sync": "node prisma/db-sync.js",
     "migrate:demo-areas": "node prisma/corrigir-areas-demo.js",
     "format": "prettier --write \"src/**/*.js\" \"prisma/**/*.js\""

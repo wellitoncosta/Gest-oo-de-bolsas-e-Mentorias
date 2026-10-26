@@ -68,6 +68,34 @@ body {
   transform: scaleX(1);
 }
 
+.agenda-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.agenda-scrollbar:hover,
+.agenda-scrollbar:focus-within {
+  scrollbar-color: rgb(var(--brand) / 0.45) transparent;
+}
+
+.agenda-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.agenda-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agenda-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.agenda-scrollbar:hover::-webkit-scrollbar-thumb,
+.agenda-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background: rgb(var(--brand) / 0.45);
+}
+
 @layer components {
   main > div {
     animation: fadeIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;

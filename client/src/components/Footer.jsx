@@ -38,14 +38,13 @@ export default function Footer() {
         ...(!user ? [{ to: '/', label: t('home') }] : []),
         { to: '/dashboard', label: t('dashboard') },
         { to: '/bolsas', label: t('scholarships') },
-        { to: '/mentores', label: t('mentors') },
+        { to: '/mentoria', label: t('mentoring') },
       ],
     },
     {
       title: t('platformTitle'),
       links: [
-        { to: '/candidaturas', label: t('applications') },
-        { to: '/mentorias', label: t('mentoring') },
+        { to: '/candidaturas', label: t('applications'), show: user?.role === 'ESTUDANTE' },
         { to: '/minha-conta', label: t('account'), show: Boolean(user) },
         { to: '/registo', label: t('register'), show: !user },
       ],

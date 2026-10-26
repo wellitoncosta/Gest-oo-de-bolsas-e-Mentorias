@@ -14,9 +14,8 @@ const Home = lazy(() => import('./pages/Home'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Bolsas = lazy(() => import('./pages/Bolsas'))
 const BolsaDetalhe = lazy(() => import('./pages/BolsaDetalhe'))
-const Mentores = lazy(() => import('./pages/Mentores'))
+const Mentoria = lazy(() => import('./pages/Mentoria'))
 const MentorDetalhe = lazy(() => import('./pages/MentorDetalhe'))
-const Mentorias = lazy(() => import('./pages/Mentorias'))
 const MinhaConta = lazy(() => import('./pages/MinhaConta'))
 const MinhasCandidaturas = lazy(() => import('./pages/MinhasCandidaturas'))
 const Login = lazy(() => import('./pages/Login'))
@@ -59,7 +58,8 @@ function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/bolsas" element={<Bolsas />} />
             <Route path="/bolsas/:id" element={<BolsaDetalhe />} />
-            <Route path="/mentores" element={<Mentores />} />
+            <Route path="/mentoria" element={<Mentoria />} />
+            <Route path="/mentores" element={<Navigate to="/mentoria" replace />} />
             <Route path="/mentores/:id" element={<MentorDetalhe />} />
             <Route path="/termos" element={<LegalPages type="terms" />} />
             <Route path="/privacidade" element={<LegalPages type="privacy" />} />
@@ -96,14 +96,7 @@ function AppContent() {
               }
             />
             <Route path="/nao-autorizado" element={<NaoAutorizado />} />
-            <Route
-              path="/mentorias"
-              element={
-                <ProtectedRoute>
-                  <Mentorias />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/mentorias" element={<Navigate to="/mentoria?tab=sessoes" replace />} />
             <Route
               path="/candidaturas"
               element={

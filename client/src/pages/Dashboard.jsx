@@ -443,7 +443,7 @@ export default function Dashboard() {
           </Painel>
           <Painel
             title={t('nextSessionTitle')}
-            to="/mentorias"
+            to="/mentoria?tab=sessoes"
             action={t('viewAll')}
             className="lg:col-span-5"
           >
@@ -468,7 +468,7 @@ export default function Dashboard() {
                 action={
                   <Link
                     className="text-sm font-semibold text-brand dark:text-accent"
-                    to="/mentores"
+                    to="/mentoria?tab=explorar"
                   >
                     {t('findMentor')}
                   </Link>
@@ -526,7 +526,7 @@ export default function Dashboard() {
           </Painel>
           <Painel
             title={t('suggestedMentors')}
-            to="/mentores"
+            to="/mentoria?tab=explorar"
             action={t('viewAll')}
             className="lg:col-span-6"
           >
@@ -559,7 +559,7 @@ export default function Dashboard() {
                 action={
                   <Link
                     className="text-sm font-semibold text-brand dark:text-accent"
-                    to="/mentores"
+                    to="/mentoria?tab=explorar"
                   >
                     {t('findMentor')}
                   </Link>
@@ -624,7 +624,7 @@ export default function Dashboard() {
     const mentor = data.mentor || {}
     return (
       <div className="mx-auto max-w-content space-y-6 px-5 py-8">
-        {header('/mentorias', t('manageAvailability'), CalendarClock)}
+        {header('/mentoria?tab=horarios', t('manageAvailability'), CalendarClock)}
         {renderKpis(
           [
             {
@@ -656,23 +656,25 @@ export default function Dashboard() {
         <div className="grid gap-5 lg:grid-cols-12">
           <Painel
             title={t('weekAgenda')}
-            to="/mentorias"
+            to="/mentoria?tab=horarios"
             action={t('manageAvailability')}
             className="lg:col-span-7"
           >
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
-              {(mentor.agendaSemana || []).map((day) => (
-                <div key={day.data} className="min-h-24 rounded-xl bg-bg/60 p-3">
-                  <p className="text-xs font-semibold text-muted">
-                    {dataFormatada(day.data, i18n.language, zone, {
-                      weekday: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
-                  <p className="mt-3 text-2xl font-semibold">{day.sessoes.length}</p>
-                  <p className="text-xs text-muted">{t('sessionsLabel')}</p>
-                </div>
-              ))}
+            <div className="agenda-scrollbar -mx-1 overflow-x-auto px-1 pb-2">
+              <div className="grid min-w-[770px] grid-cols-7 gap-2">
+                {(mentor.agendaSemana || []).map((day) => (
+                  <div key={day.data} className="min-h-24 min-w-0 rounded-xl bg-bg/60 p-3">
+                    <p className="flex min-h-8 items-center justify-center text-center text-xs font-semibold text-muted">
+                      {dataFormatada(day.data, i18n.language, zone, {
+                        weekday: 'short',
+                        day: 'numeric',
+                      })}
+                    </p>
+                    <p className="mt-3 text-2xl font-semibold">{day.sessoes.length}</p>
+                    <p className="text-xs text-muted">{t('sessionsLabel')}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </Painel>
           <Painel title={t('weeklyHours')} className="lg:col-span-5">
@@ -682,7 +684,7 @@ export default function Dashboard() {
           </Painel>
           <Painel
             title={t('pendingRequests')}
-            to="/mentorias"
+            to="/mentoria?tab=pedidos"
             action={t('viewAll')}
             className="lg:col-span-7"
           >
@@ -742,7 +744,7 @@ export default function Dashboard() {
                 action={
                   <Link
                     className="text-sm font-semibold text-brand dark:text-accent"
-                    to="/mentorias"
+                    to="/mentoria?tab=pedidos"
                   >
                     {t('manageAvailability')}
                   </Link>
@@ -752,7 +754,7 @@ export default function Dashboard() {
           </Painel>
           <Painel
             title={t('upcomingSessions')}
-            to="/mentorias"
+            to="/mentoria?tab=sessoes"
             action={t('viewAll')}
             className="lg:col-span-5"
           >

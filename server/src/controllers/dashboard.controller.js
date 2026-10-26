@@ -1,4 +1,5 @@
 import prisma from '../config/db.js'
+import { disponibilidadeTemColunaAtiva } from '../utils/esquema.js'
 
 const HORA = 60 * 60 * 1000
 const DIA = 24 * HORA
@@ -93,6 +94,18 @@ const somaHoras = (mentorias) =>
     return inicio && fim ? total + Math.max(0, fim.getTime() - inicio.getTime()) / HORA : total
   }, 0)
 
+const dataLocalKey = (data, timeZone = 'Africa/Luanda') => {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts(data)
+    .reduce((acc, parte) => ({ ...acc, [parte.type]: parte.value }), {})
+  return `${partes.year}-${partes.month}-${partes.day}`
+}
+
 export const resumo = async (req, res, next) => {
   try {
     const agora = new Date()
@@ -147,6 +160,7 @@ export const resumo = async (req, res, next) => {
     if (!req.user) return res.json(basePublica)
 
     if (req.user.role === 'ESTUDANTE') {
+      const temColunaAtiva = await disponibilidadeTemColunaAtiva()
       const user = await prisma.user.findUnique({
         where: { id: req.user.id },
         select: {
@@ -193,7 +207,10 @@ export const resumo = async (req, res, next) => {
             status: 'CONFIRMADA',
             disponibilidade: { inicio: { gte: agora } },
           },
-          include: { mentor: { select: { id: true, nome: true } }, disponibilidade: true },
+          include: {
+            mentor: { select: { id: true, nome: true } },
+            disponibilidade: { select: { inicio: true, fim: true } },
+          },
           orderBy: { disponibilidade: { inicio: 'asc' } },
         }),
         prisma.bolsa.findMany({
@@ -239,15 +256,19 @@ export const resumo = async (req, res, next) => {
         area: true,
         biografia: true,
         biografiaEn: true,
-        mentorDisponibilidades: {
-          where: { ativa: true, inicio: { gte: agora } },
-          include: {
-            mentorias: {
-              where: { status: { in: ['PENDENTE', 'CONFIRMADA'] } },
-              select: { id: true },
-            },
-          },
-        },
+        ...(temColunaAtiva
+          ? {
+              mentorDisponibilidades: {
+                where: { ativa: true, inicio: { gte: agora } },
+                include: {
+                  mentorias: {
+                    where: { status: { in: ['PENDENTE', 'CONFIRMADA'] } },
+                    select: { id: true },
+                  },
+                },
+              },
+            }
+          : {}),
       }
       const mentoresDaArea = await prisma.user.findMany({
         where: {
@@ -269,7 +290,7 @@ export const resumo = async (req, res, next) => {
         : []
       const ordenarMentores = (lista) =>
         lista
-          .map(({ mentorDisponibilidades, ...mentor }) => ({
+          .map(({ mentorDisponibilidades = [], ...mentor }) => ({
             ...mentor,
             temHorarioLivre: mentorDisponibilidades.some((d) => d.mentorias.length === 0),
           }))
@@ -324,6 +345,7 @@ export const resumo = async (req, res, next) => {
     }
 
     if (req.user.role === 'MENTOR') {
+      const temColunaAtiva = await disponibilidadeTemColunaAtiva()
       const [
         pendentes,
         sessoesSemana,
@@ -340,7 +362,10 @@ export const resumo = async (req, res, next) => {
             status: { in: ['PENDENTE', 'CONFIRMADA'] },
             disponibilidade: { inicio: { gte: inicioSemana, lt: fimSemana } },
           },
-          include: { estudante: { select: { id: true, nome: true } }, disponibilidade: true },
+          include: {
+            estudante: { select: { id: true, nome: true } },
+            disponibilidade: { select: { inicio: true, fim: true } },
+          },
           orderBy: { disponibilidade: { inicio: 'asc' } },
         }),
         prisma.mentoria.findMany({
@@ -349,7 +374,7 @@ export const resumo = async (req, res, next) => {
             status: 'CONCLUIDA',
             updatedAt: { gte: iniciarMesUTC(agora), lte: agora },
           },
-          include: { disponibilidade: true },
+          include: { disponibilidade: { select: { inicio: true, fim: true } } },
         }),
         prisma.mentoria.findMany({
           where: {
@@ -359,7 +384,7 @@ export const resumo = async (req, res, next) => {
               inicio: { gte: new Date(inicioSemana.getTime() - 7 * 7 * DIA), lte: agora },
             },
           },
-          include: { disponibilidade: true },
+          include: { disponibilidade: { select: { inicio: true, fim: true } } },
         }),
         prisma.mentoria.aggregate({
           where: { mentorId: req.user.id, avaliacao: { not: null } },
@@ -372,13 +397,23 @@ export const resumo = async (req, res, next) => {
             status: { in: ['PENDENTE', 'CONFIRMADA'] },
             disponibilidade: { inicio: { gte: agora } },
           },
-          include: { estudante: { select: { id: true, nome: true } }, disponibilidade: true },
+          include: {
+            estudante: { select: { id: true, nome: true } },
+            disponibilidade: { select: { inicio: true, fim: true } },
+          },
           orderBy: { disponibilidade: { inicio: 'asc' } },
           take: 5,
         }),
         prisma.disponibilidadeMentor.findMany({
-          where: { mentorId: req.user.id, ativa: true, inicio: { gte: agora } },
-          include: {
+          where: {
+            mentorId: req.user.id,
+            ...(temColunaAtiva ? { ativa: true } : {}),
+            inicio: { gte: agora },
+          },
+          select: {
+            id: true,
+            inicio: true,
+            fim: true,
             mentorias: {
               where: { status: { in: ['PENDENTE', 'CONFIRMADA'] } },
               select: { id: true },
@@ -388,12 +423,12 @@ export const resumo = async (req, res, next) => {
       ])
       const agendaSemana = Array.from({ length: 7 }, (_, dia) => {
         const data = new Date(inicioSemana.getTime() + dia * DIA)
+        const chaveDia = dataLocalKey(data, req.user?.fusoHorario)
         return {
           data: data.toISOString(),
           sessoes: sessoesSemana.filter(
             (sessao) =>
-              sessao.disponibilidade.inicio.toISOString().slice(0, 10) ===
-              data.toISOString().slice(0, 10),
+              dataLocalKey(sessao.disponibilidade.inicio, req.user?.fusoHorario) === chaveDia,
           ),
         }
       })
@@ -742,7 +777,7 @@ export const minhaArea = async (req, res, next) => {
         include: {
           mentor: { select: { nome: true } },
           estudante: { select: { nome: true } },
-          disponibilidade: true,
+          disponibilidade: { select: { id: true, inicio: true, fim: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),
