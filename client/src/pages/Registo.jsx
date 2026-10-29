@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input, Select } from '../components/ui/Field'
+import PasswordField from '../components/ui/PasswordField'
+import { Check } from 'lucide-react'
 import { fusoDoNavegador } from '../services/datas'
 import BackButton from '../components/BackButton'
 import api from '../services/api'
@@ -19,7 +21,12 @@ export default function Registo() {
     instituicao: '',
   })
   const [instituicoes, setInstituicoes] = useState([])
+  const [confirmacao, setConfirmacao] = useState('')
+  const [confirmacaoTouched, setConfirmacaoTouched] = useState(false)
+  const [submissaoTentada, setSubmissaoTentada] = useState(false)
   const [erro, setErro] = useState('')
+  const senhaRef = useRef(null)
+  const confirmacaoRef = useRef(null)
   const { registar } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation(['auth', 'common'])
@@ -32,7 +39,16 @@ export default function Registo() {
   const update = (key) => (event) => setForm((value) => ({ ...value, [key]: event.target.value }))
   const submeter = async (e) => {
     e.preventDefault()
+    setSubmissaoTentada(true)
     setErro('')
+    if (form.senha.length < 6) {
+      senhaRef.current?.focus()
+      return
+    }
+    if (!confirmacao || form.senha !== confirmacao) {
+      confirmacaoRef.current?.focus()
+      return
+    }
     try {
       await registar(form)
       navigate('/dashboard')
@@ -67,6 +83,7 @@ export default function Registo() {
         </div>
         <form
           onSubmit={submeter}
+          noValidate
           className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-brand/5 sm:p-8"
         >
           <BackButton to="/" />
@@ -105,14 +122,38 @@ export default function Registo() {
             autoComplete="email"
             required
           />
-          <Input
-            type="password"
+          <PasswordField
+            ref={senhaRef}
             label={t('common:password')}
             value={form.senha}
             onChange={update('senha')}
             autoComplete="new-password"
             required
+            minLength={6}
+            hint={t('auth:passwordMin')}
+            error={submissaoTentada && form.senha.length < 6 ? t('auth:passwordMin') : undefined}
           />
+          <PasswordField
+            ref={confirmacaoRef}
+            label={t('auth:confirmPassword')}
+            value={confirmacao}
+            onChange={(event) => setConfirmacao(event.target.value)}
+            onBlur={() => setConfirmacaoTouched(true)}
+            autoComplete="new-password"
+            required
+            error={
+              (confirmacaoTouched || submissaoTentada) &&
+              (!confirmacao || confirmacao !== form.senha)
+                ? t('auth:passwordsDontMatch')
+                : undefined
+            }
+          />
+          {confirmacao && form.senha === confirmacao && (
+            <p className="flex items-center gap-1.5 text-sm text-accent" role="status">
+              <Check size={16} aria-hidden="true" />
+              {t('auth:passwordsMatch')}
+            </p>
+          )}
           <Select label={t('auth:role')} value={form.role} onChange={update('role')}>
             <option value="ESTUDANTE">{t('common:student')}</option>
             <option value="MENTOR">{t('common:mentor')}</option>

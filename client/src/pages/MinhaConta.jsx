@@ -21,6 +21,7 @@ import { fusoDoNavegador, fusosHorarios } from '../services/datas'
 import { traduzirErro } from '../services/traduzirErro'
 import AreaSelect from '../components/AreaSelect'
 import { conteudo } from '../services/conteudo'
+import PasswordField from '../components/ui/PasswordField'
 
 const emptyForm = {
   nome: '',
@@ -46,7 +47,6 @@ export default function MinhaConta() {
   const [form, setForm] = useState(emptyForm)
   const [original, setOriginal] = useState(emptyForm)
   const [senha, setSenha] = useState({ atual: '', nova: '' })
-  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [senhaApagar, setSenhaApagar] = useState('')
   const [aba, setAba] = useState('profile')
   const [busy, setBusy] = useState(false)
@@ -386,41 +386,29 @@ export default function MinhaConta() {
               <div className="space-y-7">
                 <form onSubmit={alterarSenha} className="max-w-xl space-y-4">
                   <Section title={t('account:changePassword')}>
-                    <Field
+                    <PasswordField
                       label={t('account:currentPassword')}
-                      type="password"
                       value={senha.atual}
-                      onChange={(v) => setSenha({ ...senha, atual: v })}
+                      onChange={(event) => setSenha({ ...senha, atual: event.target.value })}
+                      autoComplete="current-password"
                       required
                     />
                     <div>
-                      <label className="mb-1 block text-sm font-medium">
-                        {t('auth:newPassword')}
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type={mostrarSenha ? 'text' : 'password'}
-                          value={senha.nova}
-                          onChange={(e) => setSenha({ ...senha, nova: e.target.value })}
-                          className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-4 py-3"
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setMostrarSenha(!mostrarSenha)}
-                          className="rounded-xl border border-border px-3 text-sm"
-                        >
-                          {mostrarSenha ? t('auth:hide') : t('auth:show')}
-                        </button>
-                      </div>
+                      <PasswordField
+                        label={t('auth:newPassword')}
+                        value={senha.nova}
+                        onChange={(event) => setSenha({ ...senha, nova: event.target.value })}
+                        autoComplete="new-password"
+                        required
+                        minLength={6}
+                        hint={t('account:passwordHint')}
+                      />
                       <div className="mt-2 h-2 rounded-full bg-surface-2">
                         <div
                           className={`h-2 rounded-full ${forca > 65 ? 'bg-accent' : forca ? 'bg-danger' : ''}`}
                           style={{ width: `${forca}%` }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-muted">{t('account:passwordHint')}</p>
                     </div>
                     <button
                       disabled={busy}
@@ -448,14 +436,16 @@ export default function MinhaConta() {
                     {t('account:dangerZone')}
                   </h3>
                   <p className="mt-2 text-sm text-muted">{t('account:deleteDescription')}</p>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <input
-                      type="password"
-                      value={senhaApagar}
-                      onChange={(e) => setSenhaApagar(e.target.value)}
-                      placeholder={t('account:confirmPassword')}
-                      className="min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 py-2"
-                    />
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="min-w-0 flex-1">
+                      <PasswordField
+                        label={t('account:confirmPassword')}
+                        value={senhaApagar}
+                        onChange={(event) => setSenhaApagar(event.target.value)}
+                        autoComplete="current-password"
+                        required
+                      />
+                    </div>
                     <button
                       disabled={busy}
                       className="rounded-xl bg-danger px-4 py-2 font-semibold text-white"

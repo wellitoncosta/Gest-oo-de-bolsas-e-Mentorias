@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
+import PasswordField from '../components/ui/PasswordField'
 import BackButton from '../components/BackButton'
 
 export default function Login() {
@@ -77,8 +78,7 @@ export default function Login() {
             autoComplete="email"
             required
           />
-          <Input
-            type="password"
+          <PasswordField
             label={t('common:password')}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}

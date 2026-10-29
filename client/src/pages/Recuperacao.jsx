@@ -5,6 +5,7 @@ import api from '../services/api'
 import AuthControls from '../components/AuthControls'
 import Button from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
+import PasswordField from '../components/ui/PasswordField'
 import { traduzirErro } from '../services/traduzirErro'
 import BackButton from '../components/BackButton'
 
@@ -13,8 +14,7 @@ export default function Recuperacao() {
     [email, setEmail] = useState(''),
     [codigo, setCodigo] = useState('')
   const [novaSenha, setNovaSenha] = useState(''),
-    [confirmar, setConfirmar] = useState(''),
-    [mostrar, setMostrar] = useState(false)
+    [confirmar, setConfirmar] = useState('')
   const [msg, setMsg] = useState(''),
     [erro, setErro] = useState(''),
     [contador, setContador] = useState(0)
@@ -235,29 +235,19 @@ export default function Recuperacao() {
             onSubmit={redefinir}
             className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-brand/5"
           >
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Input
-                  label={t('auth:newPassword')}
-                  type={mostrar ? 'text' : 'password'}
-                  value={novaSenha}
-                  onChange={(e) => setNovaSenha(e.target.value)}
-                  required
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setMostrar((v) => !v)}
-                className="rounded-xl border border-border px-3 py-2.5 text-sm"
-              >
-                {mostrar ? t('auth:hide') : t('auth:show')}
-              </button>
-            </div>
-            <Input
+            <PasswordField
+              label={t('auth:newPassword')}
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+              autoComplete="new-password"
+              required
+              hint={t('auth:passwordMin')}
+            />
+            <PasswordField
               label={t('auth:confirmPassword')}
-              type={mostrar ? 'text' : 'password'}
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
+              autoComplete="new-password"
               required
             />
             <Button loading={loadingRedefinir} className="w-full">

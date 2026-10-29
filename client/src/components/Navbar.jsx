@@ -90,7 +90,7 @@ export default function Navbar() {
 
         <nav
           aria-label={t('mainNavigation')}
-          className="absolute left-1/2 hidden max-w-[calc(100%-320px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full bg-surface-2/85 p-1.5 backdrop-blur-md lg:flex"
+          className="absolute left-1/2 hidden max-w-[calc(100%-430px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full bg-surface-2/85 p-1.5 backdrop-blur-md lg:flex"
         >
           {links.map(([to, label]) => (
             <NavLink key={to} to={to} end={to === '/'} className={activeClass}>
@@ -100,6 +100,8 @@ export default function Navbar() {
         </nav>
 
         <div className="z-10 hidden shrink-0 items-center gap-2 lg:flex">
+          <LangSwitch />
+          <ThemeToggle />
           {!user ? (
             <>
               <Link
@@ -117,8 +119,6 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <LangSwitch />
-              <ThemeToggle />
               <button
                 type="button"
                 onClick={() => setNotifications(0)}
@@ -174,15 +174,18 @@ export default function Navbar() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-label={t(open ? 'closeMenu' : 'menu')}
-          aria-expanded={open}
-          className="z-10 grid h-10 w-10 place-items-center rounded-full border border-border bg-surface/80 text-text lg:hidden"
-        >
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="z-10 flex shrink-0 items-center gap-1.5 lg:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-label={t(open ? 'closeMenu' : 'menu')}
+            aria-expanded={open}
+            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface/80 text-text"
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -227,12 +230,12 @@ export default function Navbar() {
               </div>
             )}
           </nav>
-          {user && (
-            <div className="mx-auto mt-8 flex w-full max-w-lg items-center justify-between rounded-2xl bg-surface p-4">
-              <div className="flex items-center gap-3">
-                <LangSwitch />
-                <ThemeToggle />
-              </div>
+          <div className="mx-auto mt-8 flex w-full max-w-lg items-center justify-between rounded-2xl bg-surface p-4">
+            <div className="flex items-center gap-3">
+              <LangSwitch />
+              <ThemeToggle />
+            </div>
+            {user && (
               <button
                 type="button"
                 onClick={() => setNotifications(0)}
@@ -246,8 +249,8 @@ export default function Navbar() {
                   </span>
                 )}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </header>
